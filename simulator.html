@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>MACRO//OPS — Biometric Target Simulator</title>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Custom Tactical Styling & Animations */
+    html, body {
+      background-color: #09090b;
+      color: #f4f4f5;
+      overflow-x: hidden;
+      max-width: 100vw;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .tactical-grid {
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #09090b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #f59e0b;
+    }
+
+    /* Range Slider Styling */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: #18181b;
+      height: 6px;
+      border-radius: 4px;
+      border: 1px solid #27272a;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      background: #f59e0b;
+      cursor: pointer;
+      border: 2px solid #09090b;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      border-radius: 4px;
+      background: #f59e0b;
+      cursor: pointer;
+      border: 2px solid #09090b;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.45; }
+    }
+    .animate-pulse-slow {
+      animation: pulseGlow 2.4s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="min-h-screen w-full overflow-x-hidden font-sans selection:bg-amber-500 selection:text-zinc-950 pb-20 relative">
+  <!-- Background Tactical Grid Overlay -->
+  <div class="fixed inset-0 pointer-events-none tactical-grid z-0"></div>
+
+  <!-- Toast Notification Container -->
+  <div
+    id="toast-container"
+    class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-5 sm:bottom-5 z-50 hidden items-center gap-2.5 px-4 py-3 rounded-lg border bg-zinc-900/95 border-amber-500/60 text-zinc-100 shadow-2xl font-mono text-xs transition-all max-w-md sm:w-auto"
+  >
+    <i data-lucide="zap" class="w-4 h-4 text-amber-400 shrink-0"></i>
+    <span id="toast-message" class="break-words">Telemetry Copied</span>
+  </div>
+
+  <!-- ================= TOP COMMAND HEADER ================= -->
+  <header class="sticky top-0 z-30 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/80">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-3 sm:py-3.5 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+      <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+        <div class="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-inner shrink-0">
+          <i data-lucide="cpu" class="w-5 h-5"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <h1 class="text-sm sm:text-lg font-mono font-bold tracking-wider uppercase text-zinc-100 truncate">
+              MACRO<span class="text-amber-500">//</span>SIMULATOR
+            </h1>
+            <span class="text-[9px] sm:text-[10px] font-mono uppercase px-1.5 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded shrink-0">
+              STANDALONE MODULE
+            </span>
+          </div>
+          <p class="text-[10px] sm:text-[11px] font-mono text-zinc-400 truncate">
+            BIOMETRIC TDEE & MACRONUTRIENT PARTITIONING ENGINE
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2 shrink-0">
+        <button
+          id="reset-spec-btn"
+          type="button"
+          class="min-h-[44px] px-3 sm:px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/80 text-xs font-mono text-zinc-200 transition-colors cursor-pointer flex items-center gap-1.5"
+          title="Reset to Default Operator Spec (25yo Male, 80.5kg, 189cm)"
+        >
+          <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
+          <span>RESET DEFAULT SPEC</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN WORKSPACE ================= -->
+  <main class="max-w-7xl mx-auto px-3 sm:px-6 pt-5 sm:pt-7 space-y-6 relative z-10">
+
+    <!-- TOP ENERGETICS SUMMARY RIBBON (BMR / TDEE / DELTA / TARGET) -->
+    <section aria-label="Metabolic Baseline Telemetry">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="activity" class="w-4 h-4 text-amber-500 shrink-0"></i>
+          <h2 class="text-xs font-mono uppercase tracking-widest text-zinc-300 font-semibold">
+            01 // METABOLIC BASELINE & ENERGY PARTITION
+          </h2>
+        </div>
+        <span class="text-[11px] font-mono text-emerald-400 flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse-slow"></span>
+          MIFFLIN-ST JEOR ENGINE ACTIVE
+        </span>
+      </div>
+
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
+        <!-- BMR Card -->
+        <div class="bg-zinc-900/90 border border-zinc-800 p-3.5 sm:p-4 rounded-lg">
+          <span class="text-[10px] sm:text-[11px] font-mono uppercase tracking-widest text-zinc-400 block">
+            BASAL METABOLIC RATE (BMR)
+          </span>
+          <div class="flex items-baseline gap-1.5 mt-1">
+            <span id="out-bmr" class="text-xl sm:text-2xl font-mono font-bold text-zinc-100">1,908</span>
+            <span class="text-xs font-mono text-zinc-500">kcal/day</span>
+          </div>
+          <p class="text-[10px] font-mono text-zinc-500 mt-2">
+            RESTING CELLULAR DEMAND
+          </p>
+        </div>
+
+        <!-- Maintenance TDEE Card -->
+        <div class="bg-zinc-900/90 border border-zinc-800 p-3.5 sm:p-4 rounded-lg">
+          <span class="text-[10px] sm:text-[11px] font-mono uppercase tracking-widest text-zinc-400 block">
+            MAINTENANCE TDEE
+          </span>
+          <div class="flex items-baseline gap-1.5 mt-1">
+            <span id="out-tdee" class="text-xl sm:text-2xl font-mono font-bold text-zinc-100">2,624</span>
+            <span class="text-xs font-mono text-zinc-500">kcal/day</span>
+          </div>
+          <p id="out-activity-tag" class="text-[10px] font-mono text-zinc-500 mt-2 truncate">
+            MULTIPLIER: 1.375x (3X/WK)
+          </p>
+        </div>
+
+        <!-- Protocol Caloric Delta Card -->
+        <div class="bg-zinc-900/90 border border-zinc-800 p-3.5 sm:p-4 rounded-lg">
+          <span class="text-[10px] sm:text-[11px] font-mono uppercase tracking-widest text-zinc-400 block">
+            PROTOCOL CALORIC DELTA
+          </span>
+          <div class="flex items-baseline gap-1.5 mt-1">
+            <span id="out-delta" class="text-xl sm:text-2xl font-mono font-bold text-emerald-400">+250</span>
+            <span class="text-xs font-mono text-zinc-500">kcal/day</span>
+          </div>
+          <p id="out-protocol-tag" class="text-[10px] font-mono text-emerald-400/90 mt-2 truncate">
+            LEAN MUSCLE HYPERTROPHY
+          </p>
+        </div>
+
+        <!-- Net Target Ceiling Card -->
+        <div class="bg-zinc-900/90 border border-amber-500/40 p-3.5 sm:p-4 rounded-lg relative overflow-hidden">
+          <span class="text-[10px] sm:text-[11px] font-mono uppercase tracking-widest text-amber-400 block">
+            DAILY TARGET CEILING
+          </span>
+          <div class="flex items-baseline gap-1.5 mt-1">
+            <span id="out-target-cals-top" class="text-xl sm:text-2xl font-mono font-bold text-amber-400">2,870</span>
+            <span class="text-xs font-mono text-zinc-400">kcal/day</span>
+          </div>
+          <p id="out-weekly-rate" class="text-[10px] font-mono text-zinc-400 mt-2 truncate">
+            EST. DELTA: +0.23 KG / WEEK
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- MAIN TWO-COLUMN SIMULATOR GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
+
+      <!-- ================= LEFT COLUMN (5 COLS): BIOMETRIC INTAKE FORM ================= -->
+      <section class="lg:col-span-5 bg-zinc-900/85 border border-zinc-800 rounded-lg overflow-hidden shadow-xl">
+        <div class="p-3.5 sm:p-4 border-b border-zinc-800 bg-zinc-950/60 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <i data-lucide="sliders" class="w-4 h-4 text-amber-400 shrink-0"></i>
+            <h2 class="text-xs font-mono font-bold uppercase tracking-wider text-zinc-200">
+              02 // BIOMETRIC & PROTOCOL PARAMETERS
+            </h2>
+          </div>
+          <span class="text-[10px] font-mono text-zinc-500">LIVE SIMULATOR</span>
+        </div>
+
+        <form id="simulator-form" class="p-4 sm:p-5 space-y-4">
+          <!-- Sex & Age Row -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label for="sim-sex" class="block text-[11px] font-mono uppercase text-zinc-300 mb-1.5">
+                BIOLOGICAL SEX
+              </label>
+              <select
+                id="sim-sex"
+                class="w-full min-h-[44px] bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-lg px-3 py-2 text-base sm:text-xs font-mono text-zinc-100 focus:outline-none"
+              >
+                <option value="male" selected>MALE (+5 BMR OFFSET)</option>
+                <option value="female">FEMALE (-161 BMR OFFSET)</option>
+              </select>
+            </div>
+
+            <div>
+              <label for="sim-age" class="block text-[11px] font-mono uppercase text-zinc-300 mb-1.5">
+                AGE (YEARS)
+              </label>
+              <input
+                id="sim-age"
+                type="number"
+                min="14"
+                max="99"
+                value="25"
+                required
+                class="w-full min-h-[44px] bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-lg px-3.5 py-2 text-base sm:text-sm font-mono text-zinc-100 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <!-- Weight & Height Row -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <div class="flex justify-between items-center mb-1.5">
+                <label for="sim-weight" class="text-[11px] font-mono uppercase text-zinc-300">
+                  BODY WEIGHT (KG)
+                </label>
+                <span id="bmi-badge" class="text-[10px] font-mono text-emerald-400">BMI: 22.5</span>
+              </div>
+              <input
+                id="sim-weight"
+                type="number"
+                step="0.1"
+                min="35"
+                max="220"
+                value="80.5"
+                required
+                class="w-full min-h-[44px] bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-lg px-3.5 py-2 text-base sm:text-sm font-mono font-bold text-amber-400 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label for="sim-height" class="block text-[11px] font-mono uppercase text-zinc-300 mb-1.5">
+                HEIGHT (CM)
+              </label>
+              <input
+                id="sim-height"
+                type="number"
+                min="120"
+                max="240"
+                value="189"
+                required
+                class="w-full min-h-[44px] bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-lg px-3.5 py-2 text-base sm:text-sm font-mono text-zinc-100 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <!-- Activity Multiplier Dropdown -->
+          <div>
+            <label for="sim-activity" class="block text-[11px] font-mono uppercase text-zinc-300 mb-1.5">
+              DAILY ACTIVITY / TRAINING MULTIPLIER
+            </label>
+            <select
+              id="sim-activity"
+              class="w-full min-h-[44px] bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-lg px-3 py-2 text-base sm:text-xs font-mono text-zinc-100 focus:outline-none"
+            >
+              <option value="1.2">1.20x — SEDENTARY (DESK JOB, MINIMAL TRAINING)</option>
+              <option value="1.375" selected>1.375x — 3X/WK STRENGTH TRAINING (LIGHT-MODERATE)</option>
+              <option value="1.55">1.55x — 4-5X/WK HYPERTROPHY TRAINING (MODERATE)</option>
+              <option value="1.725">1.725x — 6-7X/WK HIGH VOLUME ATHLETE (INTENSE)</option>
+            </select>
+          </div>
+
+          <!-- Objective Protocol Selector -->
+          <div>
+            <label for="sim-objective" class="block text-[11px] font-mono uppercase text-zinc-300 mb-1.5">
+              OBJECTIVE PROTOCOL
+            </label>
+            <select
+              id="sim-objective"
+              class="w-full min-h-[44px] bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-lg px-3 py-2 text-base sm:text-xs font-mono text-zinc-100 focus:outline-none"
+            >
+              <option value="lean_bulk" selected>LEAN MUSCLE HYPERTROPHY (+250 KCAL SURPLUS)</option>
+              <option value="maintain">BODY RECOMPOSITION / MAINTENANCE (0 KCAL DELTA)</option>
+              <option value="cut">FAT LOSS / SHRED (-450 KCAL DEFICIT)</option>
+            </select>
+
+            <!-- Quick Protocol Cards for 1-Tap Switching -->
+            <div class="grid grid-cols-3 gap-2 mt-2.5">
+              <button
+                type="button"
+                data-protocol="cut"
+                class="protocol-pill min-h-[44px] p-2 rounded-lg border border-zinc-800 bg-zinc-950 text-left font-mono transition-all cursor-pointer hover:border-zinc-700"
+              >
+                <span class="text-[10px] text-rose-400 font-bold block">SHRED / CUT</span>
+                <span class="text-[10px] text-zinc-400">-450 kcal</span>
+              </button>
+              <button
+                type="button"
+                data-protocol="maintain"
+                class="protocol-pill min-h-[44px] p-2 rounded-lg border border-zinc-800 bg-zinc-950 text-left font-mono transition-all cursor-pointer hover:border-zinc-700"
+              >
+                <span class="text-[10px] text-sky-400 font-bold block">RECOMP</span>
+                <span class="text-[10px] text-zinc-400">0 kcal</span>
+              </button>
+              <button
+                type="button"
+                data-protocol="lean_bulk"
+                class="protocol-pill min-h-[44px] p-2 rounded-lg border border-amber-500/70 bg-amber-500/10 text-left font-mono transition-all cursor-pointer"
+              >
+                <span class="text-[10px] text-amber-400 font-bold block">LEAN BULK</span>
+                <span class="text-[10px] text-zinc-300">+250 kcal</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Fine-Tuning Partition Sliders (Default 2.05g/kg Protein & 28% Fat) -->
+          <div class="pt-3 border-t border-zinc-800/90 space-y-3.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-mono uppercase text-zinc-400">
+                PARTITION RATIO CALIBRATION
+              </span>
+              <button
+                type="button"
+                id="lock-standard-ratios-btn"
+                class="text-[10px] font-mono text-amber-400 hover:underline cursor-pointer"
+              >
+                [LOCK 2.05g/kg P • 28% F]
+              </button>
+            </div>
+
+            <!-- Protein per kg Slider -->
+            <div>
+              <div class="flex justify-between text-xs font-mono mb-1">
+                <span class="text-emerald-400">PROTEINCOEFFICIENT:</span>
+                <span id="label-protein-factor" class="text-zinc-200 font-bold">2.05 g/kg</span>
+              </div>
+              <input
+                id="sim-protein-factor"
+                type="range"
+                min="1.6"
+                max="2.6"
+                step="0.05"
+                value="2.05"
+                class="w-full"
+              />
+            </div>
+
+            <!-- Dietary Fat % Slider -->
+            <div>
+              <div class="flex justify-between text-xs font-mono mb-1">
+                <span class="text-purple-400">LIPID ALLOCATION:</span>
+                <span id="label-fat-pct" class="text-zinc-200 font-bold">28% of Total Kcal</span>
+              </div>
+              <input
+                id="sim-fat-pct"
+                type="range"
+                min="18"
+                max="40"
+                step="1"
+                value="28"
+                class="w-full"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            class="w-full min-h-[48px] py-3 px-4 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors shadow-lg shadow-amber-500/10 cursor-pointer"
+          >
+            <i data-lucide="calculator" class="w-4 h-4 stroke-[2.5] shrink-0"></i>
+            <span>RECALCULATE TELEMETRY</span>
+          </button>
+        </form>
+      </section>
+
+      <!-- ================= RIGHT COLUMN (7 COLS): TELEMETRY RESULTS & EXPORT ================= -->
+      <section class="lg:col-span-7 space-y-5">
+
+        <!-- PRIMARY COMPUTED MACRO TARGETS PANEL -->
+        <div class="bg-zinc-900/85 border border-zinc-800 rounded-lg overflow-hidden shadow-xl">
+          <div class="p-3.5 sm:p-4 border-b border-zinc-800 bg-zinc-950/60 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2">
+              <i data-lucide="crosshair" class="w-4 h-4 text-amber-400 shrink-0"></i>
+              <h2 class="text-xs font-mono font-bold uppercase tracking-wider text-zinc-200">
+                03 // COMPUTED DAILY MACRO PRESCRIPTION
+              </h2>
+            </div>
+            <span id="out-summary-pill" class="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-950/80 border border-emerald-700/60 text-emerald-400">
+              HYPERTROPHY CALIBRATED
+            </span>
+          </div>
+
+          <div class="p-4 sm:p-5 space-y-5">
+            <!-- 4 High-Contrast Telemetry Readout Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <!-- Target Calories -->
+              <div class="bg-zinc-950 border border-zinc-800 p-4 rounded-lg relative overflow-hidden">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <span class="text-[11px] font-mono uppercase tracking-widest text-zinc-400 block">
+                      DAILY ENERGY TARGET
+                    </span>
+                    <div class="flex items-baseline gap-1.5 mt-1">
+                      <span id="card-calories" class="text-3xl font-mono font-bold text-amber-400">2870</span>
+                      <span class="text-xs font-mono text-zinc-500">kcal</span>
+                    </div>
+                  </div>
+                  <span class="text-[11px] font-mono px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/30 text-amber-400">
+                    100%GET
+                  </span>
+                </div>
+                <div class="mt-3 pt-2.5 border-t border-zinc-900 flex justify-between text-[11px] font-mono text-zinc-400">
+                  <span>ENERGY DENSITY</span>
+                  <span id="card-cals-per-kg">35.7 kcal/kg</span>
+                </div>
+              </div>
+
+              <!-- Target Protein -->
+              <div class="bg-zinc-950 border border-zinc-800 p-4 rounded-lg relative overflow-hidden">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <span class="text-[11px] font-mono uppercase tracking-widest text-zinc-400 block">
+                      PROTEIN SYNTHESIS
+                    </span>
+                    <div class="flex items-baseline gap-1.5 mt-1">
+                      <span id="card-protein" class="text-3xl font-mono font-bold text-emerald-400">165</span>
+                      <span class="text-xs font-mono text-zinc-500">grams</span>
+                    </div>
+                  </div>
+                  <span id="card-protein-pct" class="text-[11px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+                    23% KCAL
+                  </span>
+                </div>
+                <div class="mt-3 pt-2.5 border-t border-zinc-900 flex justify-between text-[11px] font-mono text-zinc-400">
+                  <span id="card-protein-kcal">660 kcal (4 kcal/g)</span>
+                  <span id="card-protein-per-kg" class="text-emerald-400">2.05 g/kg</span>
+                </div>
+              </div>
+
+              <!-- Target Carbohydrates -->
+              <div class="bg-zinc-950 border border-zinc-800 p-4 rounded-lg relative overflow-hidden">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <span class="text-[11px] font-mono uppercase tracking-widest text-zinc-400 block">
+                      GLYCOGEN / CARBOHYDRATES
+                    </span>
+                    <div class="flex items-baseline gap-1.5 mt-1">
+                      <span id="card-carbs" class="text-3xl font-mono font-bold text-sky-400">352</span>
+                      <span class="text-xs font-mono text-zinc-500">grams</span>
+                    </div>
+                  </div>
+                  <span id="card-carbs-pct" class="text-[11px] font-mono px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/30 text-sky-400">
+                    49% KCAL
+                  </span>
+                </div>
+                <div class="mt-3 pt-2.5 border-t border-zinc-900 flex justify-between text-[11px] font-mono text-zinc-400">
+                  <span id="card-carbs-kcal">1408 kcal (4 kcal/g)</span>
+                  <span id="card-carbs-per-kg" class="text-sky-400">4.37 g/kg</span>
+                </div>
+              </div>
+
+              <!-- Target Fat -->
+              <div class="bg-zinc-950 border border-zinc-800 p-4 rounded-lg relative overflow-hidden">
+                <div class="flex justify-between items-start">
+                  <div>
+                    <span class="text-[11px] font-mono uppercase tracking-widest text-zinc-400 block">
+                      HORMONAL LIPIDS / FAT
+                    </span>
+                    <div class="flex items-baseline gap-1.5 mt-1">
+                      <span id="card-fat" class="text-3xl font-mono font-bold text-purple-400">89</span>
+                      <span class="text-xs font-mono text-zinc-500">grams</span>
+                    </div>
+                  </div>
+                  <span id="card-fat-pct" class="text-[11px] font-mono px-2 py-0.5 rounded bg-purple-500/10 border border-purple-500/30 text-purple-400">
+                    28% KCAL
+                  </span>
+                </div>
+                <div class="mt-3 pt-2.5 border-t border-zinc-900 flex justify-between text-[11px] font-mono text-zinc-400">
+                  <span id="card-fat-kcal">801 kcal (9 kcal/g)</span>
+                  <span id="card-fat-per-kg" class="text-purple-400">1.11 g/kg</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Visual Stacked Caloric Distribution Bar -->
+            <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-4">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <span class="text-[11px] font-mono uppercase tracking-wider text-zinc-300">
+                  CALORIC ORIGIN DISTRIBUTION (P / C / F)
+                </span>
+                <span id="split-ratio-label" class="text-xs font-mono font-bold text-zinc-300">
+                  23% P / 49% C / 28% F
+                </span>
+              </div>
+
+              <!-- Stacked Bar -->
+              <div class="w-full h-4 bg-zinc-900 rounded overflow-hidden flex border border-zinc-800 p-0.5 gap-0.5">
+                <div id="bar-seg-protein" class="h-full bg-emerald-500 transition-all duration-300 rounded-l-xs" style="width: 23%"></div>
+                <div id="bar-seg-carbs" class="h-full bg-sky-500 transition-all duration-300" style="width: 49%"></div>
+                <div id="bar-seg-fat" class="h-full bg-purple-500 transition-all duration-300 rounded-r-xs" style="width: 28%"></div>
+              </div>
+
+              <!-- Legend -->
+              <div class="grid grid-cols-3 gap-2 mt-3 text-[11px] font-mono">
+                <div class="flex items-center gap-1.5">
+                  <span class="w-2.5 h-2.5 rounded-xs bg-emerald-500 shrink-0"></span>
+                  <span class="text-zinc-400 truncate">PROTEIN (<span id="leg-pro-pct" class="text-zinc-200">23%</span>)</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="w-2.5 h-2.5 rounded-xs bg-sky-500 shrink-0"></span>
+                  <span class="text-zinc-400 truncate">CARBS (<span id="leg-carb-pct" class="text-zinc-200">49%</span>)</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="w-2.5 h-2.5 rounded-xs bg-purple-500 shrink-0"></span>
+                  <span class="text-zinc-400 truncate">LIPIDS (<span id="leg-fat-pct" class="text-zinc-200">28%</span>)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Per-Meal Tactical Ration Splitter (3, 4, or 5 Meals/Day) -->
+            <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-4">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <div>
+                  <span class="text-[11px] font-mono uppercase tracking-wider text-zinc-300 block">
+                    PER-MEAL RATION CADENCE
+                  </span>
+                  <span class="text-[10px] font-mono text-zinc-500">
+                    EVEN DISTRIBUTION ACROSS DAILY FEEDING WINDOWS
+                  </span>
+                </div>
+                <div class="flex items-center gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 font-mono text-xs">
+                  <button type="button" data-meals="3" class="meal-split-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 cursor-pointer">3 MEALS</button>
+                  <button type="button" data-meals="4" class="meal-split-btn px-2.5 py-1 rounded bg-amber-500 text-zinc-950 font-bold cursor-pointer">4 MEALS</button>
+                  <button type="button" data-meals="5" class="meal-split-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 cursor-pointer">5 MEALS</button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-4 gap-2 text-center font-mono">
+                <div class="bg-zinc-900/90 border border-zinc-800/80 p-2.5 rounded">
+                  <span class="text-[10px] text-zinc-500 block">KCAL / MEAL</span>
+                  <span id="per-meal-cals" class="text-sm font-bold text-amber-400">718</span>
+                </div>
+                <div class="bg-zinc-900/90 border border-zinc-800/80 p-2.5 rounded">
+                  <span class="text-[10px] text-zinc-500 block">PRO / MEAL</span>
+                  <span id="per-meal-pro" class="text-sm font-bold text-emerald-400">41g</span>
+                </div>
+                <div class="bg-zinc-900/90 border border-zinc-800/80 p-2.5 rounded">
+                  <span class="text-[10px] text-zinc-500 block">CARB / MEAL</span>
+                  <span id="per-meal-carb" class="text-sm font-bold text-sky-400">88g</span>
+                </div>
+                <div class="bg-zinc-900/90 border border-zinc-800/80 p-2.5 rounded">
+                  <span class="text-[10px] text-zinc-500 block">FAT / MEAL</span>
+                  <span id="per-meal-fat" class="text-sm font-bold text-purple-400">22g</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- JSON Telemetry Preview & Export Actions -->
+            <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-4 space-y-3.5">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-mono uppercase tracking-wider text-zinc-400">
+                  04 // TELEMETRY PAYLOAD & EXPORT ACTIONS
+                </span>
+                <span class="text-[10px] font-mono text-zinc-500">JSON SCHEMA V2</span>
+              </div>
+
+              <pre
+                id="json-preview-box"
+                class="bg-zinc-900/90 border border-zinc-800 rounded p-3 text-xs font-mono text-amber-300 overflow-x-auto select-all"
+              >{
+  "calories": 2870,
+  "protein": 165,
+  "carbs": 352,
+  "fat": 89
+}</pre>
+
+              <!-- Primary & Secondary Export Buttons -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  id="copy-json-btn"
+                  class="min-h-[48px] py-3 px-4 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-lg shadow-amber-500/10 cursor-pointer"
+                >
+                  <i data-lucide="copy" class="w-4 h-4 stroke-[2.5] shrink-0"></i>
+                  <span>[COPY TARGETS TO CLIPBOARD]</span>
+                </button>
+
+                <button
+                  type="button"
+                  id="export-json-btn"
+                  class="min-h-[48px] py-3 px-4 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-100 font-mono font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
+                >
+                  <i data-lucide="download" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                  <span>[EXPORT TO JSON]</span>
+                </button>
+              </div>
+
+              <!-- Direct LocalStorage Sync Button for Same-Domain MACRO//OPS Integration -->
+              <button
+                type="button"
+                id="sync-localstorage-btn"
+                class="w-full min-h-[44px] py-2.5 px-4 rounded-lg bg-emerald-950/50 hover:bg-emerald-900/60 border border-emerald-700/60 text-emerald-300 font-mono text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer"
+              >
+                <i data-lucide="database" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                <span>[WRITE DIRECTLY TO MACRO//OPS LOCALSTORAGE]</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+      </section>
+    </div>
+  </main>
+
+  <!-- ================= VANILLA JAVASCRIPT ENGINE ================= -->
+  <script>
+    // --- DEFAULT OPERATOR BIOMETRIC SPEC ---
+    const DEFAULT_SPEC = {
+      sex: 'male',
+      age: 25,
+      weight: 80.5,
+      height: 189,
+      activity: 1.375,
+      objective: 'lean_bulk',
+      proteinFactor: 2.05,
+      fatPct: 28,
+      mealsPerDay: 4
+    };
+
+    let simState = { ...DEFAULT_SPEC };
+    let computedTargets = {
+      calories: 2870,
+      protein: 165,
+      carbs: 352,
+      fat: 89
+    };
+
+    // --- DOM ELEMENTS ---
+    const sexEl = document.getElementById('sim-sex');
+    const ageEl = document.getElementById('sim-age');
+    const weightEl = document.getElementById('sim-weight');
+    const heightEl = document.getElementById('sim-height');
+    const activityEl = document.getElementById('sim-activity');
+    const objectiveEl = document.getElementById('sim-objective');
+    const proteinFactorEl = document.getElementById('sim-protein-factor');
+    const fatPctEl = document.getElementById('sim-fat-pct');
+
+    // --- HELPER: Toast Notification ---
+    let toastTimer = null;
+    function showToast(msg) {
+      const container = document.getElementById('toast-container');
+      const text = document.getElementById('toast-message');
+      text.textContent = msg;
+      container.classList.remove('hidden');
+      container.classList.add('flex');
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        container.classList.add('hidden');
+        container.classList.remove('flex');
+      }, 3500);
+    }
+
+    // --- CORE MIFFLIN-ST JEOR CALCULATION ENGINE ---
+    function runSimulation() {
+      const sex = sexEl.value;
+      const age = Math.max(14, Number(ageEl.value) || 25);
+      const weight = Math.max(35, Number(weightEl.value) || 80.5);
+      const height = Math.max(120, Number(heightEl.value) || 189);
+      const activity = Number(activityEl.value) || 1.375;
+      const objective = objectiveEl.value;
+      const proteinFactor = Number(proteinFactorEl.value) || 2.05;
+      const fatPct = Number(fatPctEl.value) || 28;
+
+      simState = {
+        ...simState,
+        sex,
+        age,
+        weight,
+        height,
+        activity,
+        objective,
+        proteinFactor,
+        fatPct
+      };
+
+      // 1. Compute BMI
+      const heightMeters = height / 100;
+      const bmi = (weight / (heightMeters * heightMeters)).toFixed(1);
+      document.getElementById('bmi-badge').textContent = `BMI: ${bmi}`;
+
+      // 2. Compute BMR (Mifflin-St Jeor)
+      let bmr = 10 * weight + 6.25 * height - 5 * age;
+      bmr += sex === 'male' ? 5 : -161;
+      const roundedBmr = Math.round(bmr);
+
+      // 3. Compute Maintenance TDEE
+      const tdee = bmr * activity;
+      const roundedTdee = Math.round(tdee);
+
+      // 4. Apply Objective Protocol Caloric Delta
+      let delta = 0;
+      let protocolLabel = 'BODY RECOMPOSITION / MAINTENANCE';
+      let deltaColor = 'text-sky-400';
+      let weeklyDeltaKg = '0.00 KG / WEEK';
+
+      if (objective === 'lean_bulk') {
+        delta = 250;
+        protocolLabel = 'LEAN MUSCLE HYPERTROPHY';
+        deltaColor = 'text-emerald-400';
+        weeklyDeltaKg = 'EST. DELTA: +0.23 KG / WEEK';
+      } else if (objective === 'cut') {
+        delta = -450;
+        protocolLabel = 'FAT LOSS / SHRED PROTOCOL';
+        deltaColor = 'text-rose-400';
+        weeklyDeltaKg = 'EST. DELTA: -0.41 KG / WEEK';
+      } else {
+        delta = 0;
+        protocolLabel = 'MAINTENANCE / RECOMP';
+        deltaColor = 'text-sky-400';
+        weeklyDeltaKg = 'EST. DELTA: 0.00 KG / WEEK';
+      }
+
+      // Target Calories rounded to nearest 10
+      const targetCalories = Math.max(1200, Math.round((tdee + delta) / 10) * 10);
+
+      // 5. Compute Macro Splits
+      // Protein: ~2.05g per kg of body weight
+      const proteinGrams = Math.round(weight * proteinFactor);
+      const proteinKcal = proteinGrams * 4;
+
+      // Fat: ~28% of total daily calories converted to grams (9 kcal/g)
+      const fatGrams = Math.round((targetCalories * (fatPct / 100)) / 9);
+      const fatKcal = fatGrams * 9;
+
+      // Carbs: Remaining calories allocated to glycogen replenishment (4 kcal/g)
+      const remainingKcal = Math.max(160, targetCalories - (proteinKcal + fatKcal));
+      const carbGrams = Math.round(remainingKcal / 4);
+      const carbKcal = carbGrams * 4;
+
+      computedTargets = {
+        calories: targetCalories,
+        protein: proteinGrams,
+        carbs: carbGrams,
+        fat: fatGrams
+      };
+
+      // --- UPDATE TOP METABOLIC BASELINE CARDS ---
+      document.getElementById('out-bmr').textContent = roundedBmr.toLocaleString();
+      document.getElementById('out-tdee').textContent = roundedTdee.toLocaleString();
+
+      const activityNames = {
+        '1.2': '1.20x (SEDENTARY)',
+        '1.375': '1.375x (3X/WK STRENGTH)',
+        '1.55': '1.55x (4-5X/WK HYPERTROPHY)',
+        '1.725': '1.725x (6-7X/WK ATHLETE)'
+      };
+      document.getElementById('out-activity-tag').textContent = `MULTIPLIER: ${activityNames[String(activity)] || activity + 'x'}`;
+
+      const outDeltaEl = document.getElementById('out-delta');
+      outDeltaEl.textContent = delta > 0 ? `+${delta}` : `${delta}`;
+      outDeltaEl.className = `text-xl sm:text-2xl font-mono font-bold ${deltaColor}`;
+
+      const outProtocolTag = document.getElementById('out-protocol-tag');
+      outProtocolTag.textContent = protocolLabel;
+      outProtocolTag.className = `text-[10px] font-mono mt-2 truncate ${deltaColor}`;
+
+      document.getElementById('out-target-cals-top').textContent = targetCalories.toLocaleString();
+      document.getElementById('out-weekly-rate').textContent = weeklyDeltaKg;
+
+      // --- UPDATE SLIDER LABELS ---
+      document.getElementById('label-protein-factor').textContent = `${proteinFactor.toFixed(2)} g/kg`;
+      document.getElementById('label-fat-pct').textContent = `${fatPct}% of Total Kcal`;
+
+      // --- UPDATE PRIMARY TELEMETRY CARDS ---
+      const actualTotalKcal = Math.max(1, proteinKcal + carbKcal + fatKcal);
+      const proPct = Math.round((proteinKcal / actualTotalKcal) * 100);
+      const fatActualPct = Math.round((fatKcal / actualTotalKcal) * 100);
+      const carbPct = Math.max(0, 100 - (proPct + fatActualPct));
+
+      document.getElementById('card-calories').textContent = targetCalories;
+      document.getElementById('card-cals-per-kg').textContent = `${(targetCalories / weight).toFixed(1)} kcal/kg`;
+
+      document.getElementById('card-protein').textContent = proteinGrams;
+      document.getElementById('card-protein-pct').textContent = `${proPct}% KCAL`;
+      document.getElementById('card-protein-kcal').textContent = `${proteinKcal} kcal (4 kcal/g)`;
+      document.getElementById('card-protein-per-kg').textContent = `${(proteinGrams / weight).toFixed(2)} g/kg`;
+
+      document.getElementById('card-carbs').textContent = carbGrams;
+      document.getElementById('card-carbs-pct').textContent = `${carbPct}% KCAL`;
+      document.getElementById('card-carbs-kcal').textContent = `${carbKcal} kcal (4 kcal/g)`;
+      document.getElementById('card-carbs-per-kg').textContent = `${(carbGrams / weight).toFixed(2)} g/kg`;
+
+      document.getElementById('card-fat').textContent = fatGrams;
+      document.getElementById('card-fat-pct').textContent = `${fatActualPct}% KCAL`;
+      document.getElementById('card-fat-kcal').textContent = `${fatKcal} kcal (9 kcal/g)`;
+      document.getElementById('card-fat-per-kg').textContent = `${(fatGrams / weight).toFixed(2)} g/kg`;
+
+      // --- UPDATE STACKED VISUAL BAR ---
+      document.getElementById('split-ratio-label').textContent = `${proPct}% P / ${carbPct}% C / ${fatActualPct}% F`;
+      document.getElementById('bar-seg-protein').style.width = `${proPct}%`;
+      document.getElementById('bar-seg-carbs').style.width = `${carbPct}%`;
+      document.getElementById('bar-seg-fat').style.width = `${fatActualPct}%`;
+
+      document.getElementById('leg-pro-pct').textContent = `${proPct}%`;
+      document.getElementById('leg-carb-pct').textContent = `${carbPct}%`;
+      document.getElementById('leg-fat-pct').textContent = `${fatActualPct}%`;
+
+      // --- UPDATE PER-MEAL SPLITTER ---
+      const meals = simState.mealsPerDay || 4;
+      document.getElementById('per-meal-cals').textContent = Math.round(targetCalories / meals);
+      document.getElementById('per-meal-pro').textContent = `${Math.round(proteinGrams / meals)}g`;
+      document.getElementById('per-meal-carb').textContent = `${Math.round(carbGrams / meals)}g`;
+      document.getElementById('per-meal-fat').textContent = `${Math.round(fatGrams / meals)}g`;
+
+      // --- UPDATE PROTOCOL PILL HIGHLIGHT ---
+      document.querySelectorAll('.protocol-pill').forEach(btn => {
+        const p = btn.getAttribute('data-protocol');
+        if (p === objective) {
+          btn.className = 'protocol-pill min-h-[44px] p-2 rounded-lg border border-amber-500/80 bg-amber-500/15 text-left font-mono transition-all cursor-pointer';
+        } else {
+          btn.className = 'protocol-pill min-h-[44px] p-2 rounded-lg border border-zinc-800 bg-zinc-950 text-left font-mono transition-all cursor-pointer hover:border-zinc-700';
+        }
+      });
+
+      // --- UPDATE JSON PREVIEW BOX ---
+      document.getElementById('json-preview-box').textContent = JSON.stringify(computedTargets, null, 2);
+    }
+
+    // --- EVENT LISTENERS: LIVE INPUT UPDATES ---
+    [sexEl, ageEl, weightEl, heightEl, activityEl, objectiveEl, proteinFactorEl, fatPctEl].forEach(el => {
+      el.addEventListener('input', runSimulation);
+      el.addEventListener('change', runSimulation);
+    });
+
+    document.getElementById('simulator-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      runSimulation();
+      showToast('Biometric telemetry recalculated.');
+    });
+
+    // Quick Protocol Pills
+    document.querySelectorAll('.protocol-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        objectiveEl.value = btn.getAttribute('data-protocol');
+        runSimulation();
+      });
+    });
+
+    // Lock Standard Tactical Ratios (2.05g/kg Protein, 28% Fat)
+    document.getElementById('lock-standard-ratios-btn').addEventListener('click', () => {
+      proteinFactorEl.value = '2.05';
+      fatPctEl.value = '28';
+      runSimulation();
+      showToast('Locked to 2.05g/kg Protein & 28% Dietary Fat.');
+    });
+
+    // Reset Full Spec Button
+    document.getElementById('reset-spec-btn').addEventListener('click', () => {
+      sexEl.value = DEFAULT_SPEC.sex;
+      ageEl.value = DEFAULT_SPEC.age;
+      weightEl.value = DEFAULT_SPEC.weight;
+      heightEl.value = DEFAULT_SPEC.height;
+      activityEl.value = String(DEFAULT_SPEC.activity);
+      objectiveEl.value = DEFAULT_SPEC.objective;
+      proteinFactorEl.value = String(DEFAULT_SPEC.proteinFactor);
+      fatPctEl.value = String(DEFAULT_SPEC.fatPct);
+      simState.mealsPerDay = DEFAULT_SPEC.mealsPerDay;
+      updateMealButtonsUI();
+      runSimulation();
+      showToast('Reset to Default Operator Spec (80.5kg, 189cm, 25yo).');
+    });
+
+    // Meal Cadence Splitter Buttons (3, 4, 5 meals)
+    function updateMealButtonsUI() {
+      document.querySelectorAll('.meal-split-btn').forEach(b => {
+        const m = Number(b.getAttribute('data-meals'));
+        if (m === simState.mealsPerDay) {
+          b.className = 'meal-split-btn px-2.5 py-1 rounded bg-amber-500 text-zinc-950 font-bold cursor-pointer';
+        } else {
+          b.className = 'meal-split-btn px-2.5 py-1 rounded text-zinc-400 hover:text-zinc-200 cursor-pointer';
+        }
+      });
+    }
+
+    document.querySelectorAll('.meal-split-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        simState.mealsPerDay = Number(btn.getAttribute('data-meals')) || 4;
+        updateMealButtonsUI();
+        runSimulation();
+      });
+    });
+
+    // --- EXPORT ACTION 1: COPY TARGETS TO CLIPBOARD (IFRAME-SAFE) ---
+    document.getElementById('copy-json-btn').addEventListener('click', () => {
+      const jsonStr = JSON.stringify(computedTargets, null, 2);
+      const textarea = document.createElement('textarea');
+      textarea.value = jsonStr;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+
+      try {
+        document.execCommand('copy');
+        showToast(`Copied to clipboard: ${computedTargets.calories} kcal (${computedTargets.protein}P / ${computedTargets.carbs}C / ${computedTargets.fat}F)`);
+      } catch (err) {
+        showToast('Copy failed. Select the JSON box above and press Cmd+C / Ctrl+C.');
+      } finally {
+        document.body.removeChild(textarea);
+      }
+    });
+
+    // --- EXPORT ACTION 2: DOWNLOAD JSON FILE ---
+    document.getElementById('export-json-btn').addEventListener('click', () => {
+      const payload = {
+        ...computedTargets,
+        biometrics: {
+          sex: simState.sex,
+          age: simState.age,
+          weightKg: simState.weight,
+          heightCm: simState.height,
+          activityMultiplier: simState.activity,
+          objectiveProtocol: simState.objective
+        },
+        exportedAt: new Date().toISOString()
+      };
+
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'macro-ops-targets.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Downloaded macro-ops-targets.json');
+    });
+
+    // --- EXPORT ACTION 3: WRITE DIRECTLY TO LOCALSTORAGE ---
+    document.getElementById('sync-localstorage-btn').addEventListener('click', () => {
+      try {
+        localStorage.setItem('tactical_macro_targets_v2', JSON.stringify(computedTargets));
+        localStorage.setItem('tactical_macro_targets', JSON.stringify(computedTargets));
+        showToast('Targets written to MACRO//OPS localStorage!');
+      } catch (e) {
+        showToast('Could not write to localStorage in this browser context.');
+      }
+    });
+
+    // --- INITIALIZE ON LOAD ---
+    window.addEventListener('DOMContentLoaded', () => {
+      runSimulation();
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,2093 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>MACRO//OPS — Tactical Meal & Macro AI Telemetry</title>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Lucide Icons via CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* Custom Tactical Styling & Animations */
+    html, body {
+      background-color: #09090b;
+      color: #f4f4f5;
+      overflow-x: hidden;
+      max-width: 100vw;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .tactical-grid {
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 32px 32px;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #09090b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #27272a;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #f59e0b;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in {
+      animation: fadeIn 0.25s ease-out forwards;
+    }
+
+    @keyframes scanline {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(400%); }
+    }
+    .scanner-beam {
+      position: absolute;
+      left: 0;
+      right: 0;
+      height: 36px;
+      background: linear-gradient(to bottom, transparent, rgba(245, 158, 11, 0.35), transparent);
+      border-bottom: 2px solid rgba(245, 158, 11, 0.8);
+      animation: scanline 2.2s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes shakeError {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+    .animate-shake {
+      animation: shakeError 0.38s ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen w-full overflow-x-hidden font-sans selection:bg-amber-500 selection:text-zinc-950 pb-20 relative">
+  <!-- Background Tactical Grid Overlay -->
+  <div class="fixed inset-0 pointer-events-none tactical-grid z-0"></div>
+
+  <!-- ================= TACTICAL INTRO / LOCK SCREEN GATE (#auth-gate) ================= -->
+  <div
+    id="auth-gate"
+    class="fixed inset-0 z-50 bg-zinc-950 flex flex-col items-center justify-center p-3 sm:p-6 select-none transition-opacity duration-300 overflow-y-auto"
+  >
+    <div class="fixed inset-0 pointer-events-none tactical-grid opacity-80"></div>
+
+    <!-- Ambient Tactical Corner Markers -->
+    <div class="fixed top-4 left-4 hidden sm:flex items-center gap-2 text-[11px] font-mono text-zinc-500">
+      <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+      <span>SYS.NODE // BIO-TELEMETRY-V2.6</span>
+    </div>
+    <div class="fixed top-4 right-4 hidden sm:block text-[11px] font-mono text-zinc-500">
+      ENCRYPTION: AES-256-GCM // AUTH REQUIRED
+    </div>
+
+    <!-- Main Auth Card -->
+    <div
+      id="auth-card"
+      class="relative z-10 w-full max-w-md bg-zinc-900/95 border border-zinc-800 rounded-xl p-5 sm:p-8 shadow-2xl backdrop-blur-md my-auto"
+    >
+      <!-- Top Status Pill -->
+      <div class="flex items-center justify-between border-b border-zinc-800 pb-4 mb-5 gap-2">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
+            <i data-lucide="crosshair" class="w-5 h-5"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-1.5">
+              <span class="font-mono text-sm sm:text-base font-bold tracking-wider uppercase text-zinc-100">
+                MACRO<span class="text-amber-500">//</span>OPS
+              </span>
+              <span class="text-[10px] font-mono uppercase px-1.5 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded">
+                LOCKED
+              </span>
+            </div>
+            <p class="text-[10px] font-mono text-zinc-400 uppercase tracking-wider truncate">
+              RESTRICTED NUTRITIONAL TELEMETRY TERMINAL
+            </p>
+          </div>
+        </div>
+        <i data-lucide="shield-lock" class="w-5 h-5 text-zinc-500 shrink-0"></i>
+      </div>
+
+      <!-- Terminal Readout Box -->
+      <div class="bg-zinc-950 border border-zinc-800/90 rounded-lg p-3 sm:p-3.5 mb-5 font-mono text-[11px] space-y-1.5 text-zinc-400">
+        <div class="flex justify-between gap-2">
+          <span class="text-zinc-500 shrink-0">OPERATOR PROFILE:</span>
+          <span class="text-emerald-400 text-right">HYPERTROPHY SPEC (2650 KCAL)</span>
+        </div>
+        <div class="flex justify-between gap-2">
+          <span class="text-zinc-500 shrink-0">AI ENGINE:</span>
+          <span class="text-zinc-200 text-right">GEMINI VISION MULTIMODAL</span>
+        </div>
+        <div class="flex justify-between gap-2">
+          <span class="text-zinc-500 shrink-0">SECURITY CLEARANCE:</span>
+          <span id="auth-status-indicator" class="text-amber-400 text-right">AWAITING PASSCODE...</span>
+        </div>
+      </div>
+
+      <!-- Login Form -->
+      <form id="auth-form" class="space-y-4">
+        <div>
+          <div class="flex flex-wrap items-center justify-between gap-1 mb-1.5">
+            <label for="auth-password-input" class="text-xs font-mono uppercase text-zinc-300 tracking-wider">
+              ENTER ACCESS PASSCODE
+            </label>
+            <button
+              type="button"
+              id="fill-default-passcode-btn"
+              class="min-h-[36px] sm:min-h-0 px-1 flex items-center text-[11px] font-mono text-amber-400/90 hover:text-amber-300 underline decoration-dotted cursor-pointer"
+              title="Click to auto-fill default passcode"
+            >
+              Default Passcode: <span id="auth-hint-code" class="ml-1">OPS2026</span>
+            </button>
+          </div>
+
+          <div class="relative">
+            <input
+              id="auth-password-input"
+              type="password"
+              autocomplete="off"
+              placeholder="••••••••••••"
+              required
+              class="w-full min-h-[46px] bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-lg pl-3.5 pr-11 py-2.5 text-base sm:text-sm font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none tracking-widest"
+            />
+            <button
+              type="button"
+              id="toggle-password-vis-btn"
+              class="absolute right-1.5 top-1/2 -translate-y-1/2 min-w-[40px] min-h-[40px] flex items-center justify-center text-zinc-400 hover:text-zinc-200 cursor-pointer"
+              title="Toggle Passcode Visibility"
+            >
+              <i data-lucide="eye" id="eye-icon-open" class="w-4 h-4"></i>
+              <i data-lucide="eye-off" id="eye-icon-closed" class="w-4 h-4 hidden"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Error Message Banner -->
+        <div
+          id="auth-error-msg"
+          class="hidden p-3 rounded-lg bg-rose-950/60 border border-rose-700/80 text-rose-300 text-xs font-mono items-center gap-2"
+        >
+          <i data-lucide="shield-alert" class="w-4 h-4 text-rose-400 shrink-0"></i>
+          <span>ACCESS DENIED: INVALID TACTICAL PASSCODE.</span>
+        </div>
+
+        <button
+          type="submit"
+          class="w-full min-h-[48px] py-3 px-5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/10 cursor-pointer"
+        >
+          <i data-lucide="unlock" class="w-4 h-4 stroke-[2.5]"></i>
+          <span>UNLOCK TERMINAL</span>
+        </button>
+      </form>
+
+      <div class="mt-5 pt-4 border-t border-zinc-800/80 flex flex-wrap items-center justify-between gap-2 text-[10px] sm:text-[11px] font-mono text-zinc-500">
+        <span>SESSION GUARD ACTIVE</span>
+        <span>PRESS [ENTER] TO AUTHENTICATE</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-5 sm:bottom-5 z-50 hidden items-center gap-2.5 px-4 py-3 rounded-lg border bg-zinc-900/95 border-amber-500/60 text-zinc-100 shadow-2xl font-mono text-xs transition-all max-w-md sm:w-auto">
+    <i data-lucide="zap" class="w-4 h-4 text-amber-400 shrink-0"></i>
+    <span id="toast-message" class="break-words">Notification</span>
+  </div>
+
+  <!-- ================= TOP COMMAND HEADER ================= -->
+  <header class="sticky top-0 z-30 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/80">
+    <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3.5 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+      <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+        <div class="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-inner shrink-0">
+          <i data-lucide="crosshair" class="w-5 h-5"></i>
+        </div>
+        <div class="min-w-0">
+          <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <h1 class="text-sm sm:text-lg font-mono font-bold tracking-wider uppercase text-zinc-100 truncate">
+              MACRO<span class="text-amber-500">//</span>OPS
+            </h1>
+            <span class="text-[9px] sm:text-[10px] font-mono uppercase px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded shrink-0">
+              HYPERTROPHY SPEC
+            </span>
+          </div>
+          <p class="text-[10px] sm:text-[11px] font-mono text-zinc-400 truncate hidden xs:block sm:block">
+            MULTIMODAL AI NUTRITIONAL TELEMETRY & DAILY TRACKER
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        <button
+          id="open-target-modal-btn"
+          class="min-h-[44px] px-3 sm:px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/80 text-xs font-mono text-zinc-200 transition-colors cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2"
+          title="Configure Targets & Biometric TDEE"
+        >
+          <i data-lucide="sliders" class="w-4 h-4 text-amber-400 shrink-0"></i>
+          <span class="text-[11px] sm:text-xs">TARGETS<span class="hidden md:inline"> / TDEE</span></span>
+        </button>
+
+        <button
+          id="lock-terminal-btn"
+          class="min-h-[44px] min-w-[44px] px-3 sm:px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-rose-950/60 border border-zinc-700/80 hover:border-rose-700/70 text-xs font-mono text-zinc-300 hover:text-rose-300 transition-colors cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2"
+          title="Lock Terminal Session"
+        >
+          <i data-lucide="lock" class="w-4 h-4 text-rose-400 shrink-0"></i>
+          <span class="hidden sm:inline text-xs">LOCK TERMINAL</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main id="app-main-content" class="max-w-7xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6 space-y-5 sm:space-y-6 relative z-10">
+
+    <!-- SECTION 01: DAILY MACRO TELEMETRY DASHBOARD -->
+    <section aria-label="Daily Macro Telemetry">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 mb-3">
+        <div class="flex items-center gap-2">
+          <i data-lucide="activity" class="w-4 h-4 text-amber-500 shrink-0"></i>
+          <h2 class="text-xs font-mono uppercase tracking-widest text-zinc-300 font-semibold">
+            01 // DAILY INTAKE TELEMETRY
+          </h2>
+        </div>
+        <button
+          id="load-preset-targets-btn"
+          class="min-h-[38px] sm:min-h-0 self-start sm:self-auto text-left text-[11px] font-mono text-zinc-400 hover:text-amber-400 transition-colors cursor-pointer py-1"
+        >
+          [LOAD LEAN MASS PRESET: 2650 KCAL / 165P / 300C / 85F]
+        </button>
+      </div>
+
+      <!-- 4 Macro Cards Grid -->
+      <div id="macro-dashboard-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-3.5">
+        <!-- Populated dynamically via JS -->
+      </div>
+    </section>
+
+    <!-- MAIN WORKSPACE: LEFT (ANALYZER / MANUAL) & RIGHT (DAILY LOGS) -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
+
+      <!-- LEFT COLUMN (7 COLS ON DESKTOP): AI ANALYZER & MANUAL LOGGING -->
+      <div class="lg:col-span-7 bg-zinc-900/80 border border-zinc-800 rounded-lg overflow-hidden shadow-xl">
+        <!-- Mode Switcher Tabs -->
+        <div class="grid grid-cols-2 border-b border-zinc-800 bg-zinc-950/60">
+          <button
+            id="tab-btn-ai"
+            class="min-h-[48px] py-3 px-2 sm:px-4 font-mono text-[11px] sm:text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 border-b-2 border-amber-500 text-amber-400 bg-zinc-900/90 font-semibold transition-all cursor-pointer text-center"
+          >
+            <i data-lucide="sparkles" class="w-4 h-4 shrink-0"></i>
+            <span class="truncate">02A // AI SCANNER</span>
+          </button>
+          <button
+            id="tab-btn-manual"
+            class="min-h-[48px] py-3 px-2 sm:px-4 font-mono text-[11px] sm:text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 border-b-2 border-transparent text-zinc-400 hover:text-zinc-200 transition-all cursor-pointer text-center"
+          >
+            <i data-lucide="edit-3" class="w-4 h-4 shrink-0"></i>
+            <span class="truncate">02B // DIRECT INPUT</span>
+          </button>
+        </div>
+
+        <div class="p-3.5 sm:p-5">
+          <!-- TAB PANEL: AI OPTICAL SCANNER -->
+          <div id="panel-ai" class="space-y-4 sm:space-y-5">
+            <!-- Image Upload / Drag-and-Drop Zone -->
+            <div>
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <label class="text-[11px] sm:text-xs font-mono uppercase text-zinc-300 tracking-wider">
+                  MEAL VISUAL CAPTURE (TAP OR DROP PHOTO)
+                </label>
+                <button
+                  id="clear-image-btn"
+                  class="hidden min-h-[36px] px-2 text-xs font-mono text-rose-400 hover:text-rose-300 items-center gap-1 cursor-pointer"
+                >
+                  <i data-lucide="x" class="w-3.5 h-3.5"></i> CLEAR IMAGE
+                </button>
+              </div>
+
+              <!-- Hidden File Input -->
+              <input
+                id="meal-file-input"
+                type="file"
+                accept="image/*"
+                class="hidden"
+              />
+
+              <!-- Empty Dropzone -->
+              <div
+                id="upload-dropzone"
+                class="min-h-[160px] flex flex-col items-center justify-center border-2 border-dashed border-zinc-700 hover:border-amber-500/70 bg-zinc-950/60 hover:bg-zinc-950 rounded-lg p-5 sm:p-8 text-center cursor-pointer transition-all group"
+              >
+                <div class="w-12 h-12 rounded-full bg-zinc-900 border border-zinc-700 flex items-center justify-center mx-auto mb-3 group-hover:border-amber-500/60 transition-colors">
+                  <i data-lucide="camera" class="w-6 h-6 text-zinc-400 group-hover:text-amber-400"></i>
+                </div>
+                <p class="font-mono text-xs sm:text-sm text-zinc-200 font-medium">
+                  TAP TO TAKE PHOTO OR DROP MEAL IMAGE
+                </p>
+                <p class="font-mono text-[11px] sm:text-xs text-zinc-500 mt-1">
+                  SUPPORTS JPEG, PNG, WEBP • GEMINI VISION ENGINE
+                </p>
+              </div>
+
+              <!-- Preview Container -->
+              <div
+                id="image-preview-container"
+                class="hidden relative rounded-lg overflow-hidden border border-zinc-700 bg-zinc-950 max-h-72 sm:max-h-80 items-center justify-center"
+              >
+                <img
+                  id="image-preview-el"
+                  src=""
+                  alt="Meal preview"
+                  class="max-h-72 sm:max-h-80 w-auto max-w-full object-contain mx-auto"
+                />
+                <div id="scanner-beam-overlay" class="scanner-beam hidden"></div>
+                <div class="absolute top-2.5 left-2.5 bg-zinc-950/85 border border-zinc-700 px-2.5 py-1 rounded text-[10px] sm:text-[11px] font-mono text-emerald-400 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  IMAGE LOCKED FOR TELEMETRY
+                </div>
+              </div>
+            </div>
+
+            <!-- Optional Field Notes / Context -->
+            <div>
+              <label for="ai-user-note" class="block text-[11px] sm:text-xs font-mono uppercase text-zinc-300 tracking-wider mb-1.5">
+                FIELD NOTES / COOKING OIL / SUPERMARKET INFO (OPTIONAL)
+              </label>
+              <input
+                id="ai-user-note"
+                type="text"
+                placeholder="e.g., Cooked in 1 tbsp olive oil, 220g raw chicken breast..."
+                class="w-full min-h-[44px] bg-zinc-950 border border-zinc-800 focus:border-amber-500 rounded-lg px-3.5 py-2.5 text-base sm:text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none font-mono"
+              />
+            </div>
+
+            <!-- Error Banner -->
+            <div
+              id="ai-error-banner"
+              class="hidden p-3.5 rounded-lg bg-rose-950/50 border border-rose-700/70 text-rose-300 text-xs font-mono items-start gap-2.5"
+            >
+              <i data-lucide="alert-triangle" class="w-4 h-4 text-rose-400 shrink-0 mt-0.5"></i>
+              <span id="ai-error-text" class="break-words"></span>
+            </div>
+
+            <!-- Analyze Button -->
+            <button
+              id="analyze-meal-btn"
+              class="w-full min-h-[48px] py-3.5 px-4 sm:px-5 rounded-lg bg-amber-500 hover:bg-amber-400 disabled:bg-zinc-800 disabled:text-zinc-500 text-zinc-950 font-mono font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/10 cursor-pointer"
+            >
+              <i data-lucide="zap" class="w-4 h-4 shrink-0" id="analyze-btn-icon"></i>
+              <span id="analyze-btn-text">ANALYZE MEAL & CRITIQUE MACROS</span>
+            </button>
+
+            <!-- AI ANALYSIS RESULTS CONTAINER -->
+            <div id="ai-results-container" class="hidden mt-5 pt-5 border-t border-zinc-800 space-y-4 sm:space-y-5 animate-fade-in">
+              <!-- Specimen Header & Score (1-10) -->
+              <div class="flex flex-wrap items-center justify-between gap-2 bg-zinc-950 p-3 sm:p-3.5 rounded-lg border border-zinc-800">
+                <div class="min-w-0">
+                  <span class="text-[10px] font-mono uppercase text-amber-400 block">
+                    AI IDENTIFIED SPECIMEN
+                  </span>
+                  <div class="flex flex-wrap items-baseline gap-1.5 sm:gap-2">
+                    <h3 id="res-meal-title" class="text-sm sm:text-base font-mono font-bold text-zinc-100 break-words">
+                      Analyzed Meal
+                    </h3>
+                    <span id="res-meal-weight" class="text-xs font-mono text-zinc-400">
+                      (~0g)
+                    </span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                  <span class="text-[11px] sm:text-xs font-mono text-zinc-400">QUALITY SCORE:</span>
+                  <span
+                    id="res-quality-score"
+                    class="px-2.5 py-1 rounded font-mono text-xs font-bold border bg-emerald-950/80 border-emerald-600 text-emerald-400"
+                  >
+                    8.5/10
+                  </span>
+                </div>
+              </div>
+
+              <!-- Itemized Ingredient Breakdown -->
+              <div>
+                <h4 class="text-[11px] font-mono uppercase tracking-wider text-zinc-400 mb-2">
+                  DETECTED SUB-COMPONENTS & ESTIMATED WEIGHTS
+                </h4>
+                <div class="overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-950">
+                  <div
+                    id="res-items-list"
+                    class="divide-y divide-zinc-800/80 text-xs font-mono min-w-full"
+                  >
+                    <!-- Populated via JS -->
+                  </div>
+                </div>
+              </div>
+
+              <!-- WHAT'S GOOD vs WHAT'S NOT -->
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                <!-- What's Good -->
+                <div class="bg-emerald-950/20 border border-emerald-800/50 rounded-lg p-3.5">
+                  <div class="flex items-center gap-2 text-emerald-400 font-mono text-xs font-bold uppercase tracking-wider mb-2.5">
+                    <i data-lucide="shield-check" class="w-4 h-4 shrink-0"></i>
+                    <span>WHAT'S GOOD (POSITIVES)</span>
+                  </div>
+                  <ul id="res-whats-good" class="space-y-2 text-xs text-zinc-300">
+                    <!-- Populated via JS -->
+                  </ul>
+                </div>
+
+                <!-- What's Not -->
+                <div class="bg-rose-950/20 border border-rose-800/50 rounded-lg p-3.5">
+                  <div class="flex items-center gap-2 text-rose-400 font-mono text-xs font-bold uppercase tracking-wider mb-2.5">
+                    <i data-lucide="shield-alert" class="w-4 h-4 shrink-0"></i>
+                    <span>WHAT'S NOT (DRAWBACKS)</span>
+                  </div>
+                  <ul id="res-whats-not" class="space-y-2 text-xs text-zinc-300">
+                    <!-- Populated via JS -->
+                  </ul>
+                </div>
+              </div>
+
+              <!-- Actionable Optimization Tip -->
+              <div class="bg-amber-500/10 border border-amber-500/40 rounded-lg p-3.5 flex items-start gap-3">
+                <i data-lucide="flame" class="w-4 h-4 text-amber-400 shrink-0 mt-0.5"></i>
+                <div class="text-xs">
+                  <span class="font-mono font-bold uppercase text-amber-400 block mb-0.5">
+                    TACTICAL OPTIMIZATION PROTOCOL:
+                  </span>
+                  <span id="res-optimization-tip" class="text-zinc-200 leading-relaxed"></span>
+                </div>
+              </div>
+
+              <!-- Editable Macros Before Logging -->
+              <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3.5 sm:p-4 space-y-3.5">
+                <div class="flex flex-wrap items-center justify-between gap-1">
+                  <span class="text-xs font-mono uppercase text-zinc-300 font-semibold">
+                    VERIFY & FINE-TUNE AI NUMBERS BEFORE LOGGING
+                  </span>
+                  <span class="text-[10px] sm:text-[11px] font-mono text-zinc-500">
+                    EDITABLE TELEMETRY
+                  </span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  <div class="sm:col-span-2">
+                    <label class="text-[10px] font-mono uppercase text-zinc-500 block mb-1">
+                      MEAL DESIGNATION
+                    </label>
+                    <input
+                      id="edit-ai-name"
+                      type="text"
+                      class="w-full min-h-[44px] bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-base sm:text-xs font-mono text-zinc-100 focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-[10px] font-mono uppercase text-zinc-500 block mb-1">
+                      EST. WEIGHT
+                    </label>
+                    <input
+                      id="edit-ai-weight"
+                      type="text"
+                      class="w-full min-h-[44px] bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-base sm:text-xs font-mono text-zinc-100 focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div>
+                    <label class="text-[10px] font-mono uppercase text-amber-400 block mb-1">
+                      CALORIES (KCAL)
+                    </label>
+                    <input
+                      id="edit-ai-calories"
+                      type="number"
+                      class="w-full min-h-[44px] bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-2 text-base sm:text-sm font-mono font-bold text-amber-400 focus:border-amber-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-[10px] font-mono uppercase text-emerald-400 block mb-1">
+                      PROTEIN (G)
+                    </label>
+                    <input
+                      id="edit-ai-protein"
+                      type="number"
+                      class="w-full min-h-[44px] bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-2 text-base sm:text-sm font-mono font-bold text-emerald-400 focus:border-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-[10px] font-mono uppercase text-sky-400 block mb-1">
+                      CARBS (G)
+                    </label>
+                    <input
+                      id="edit-ai-carbs"
+                      type="number"
+                      class="w-full min-h-[44px] bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-2 text-base sm:text-sm font-mono font-bold text-sky-400 focus:border-sky-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-[10px] font-mono uppercase text-purple-400 block mb-1">
+                      FAT (G)
+                    </label>
+                    <input
+                      id="edit-ai-fat"
+                      type="number"
+                      class="w-full min-h-[44px] bg-zinc-900 border border-zinc-700 rounded-lg px-2.5 py-2 text-base sm:text-sm font-mono font-bold text-purple-400 focus:border-purple-500 focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  id="commit-ai-meal-btn"
+                  class="w-full min-h-[48px] mt-2 py-3 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-mono font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                >
+                  <i data-lucide="check" class="w-4 h-4 stroke-[2.5] shrink-0"></i>
+                  <span>COMMIT MEAL TO DAILY LOG</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB PANEL: DIRECT MACRO INPUT & QUICK PRESETS -->
+          <div id="panel-manual" class="hidden space-y-5">
+            <!-- Quick-Add Tactical Presets -->
+            <div>
+              <span class="block text-[11px] font-mono uppercase text-zinc-400 tracking-wider mb-2">
+                RAPID FIELD RATIONS (TAP TO AUTO-FILL)
+              </span>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <button
+                  type="button"
+                  data-preset="shake"
+                  class="quick-preset-btn min-h-[52px] text-left p-3 rounded-lg bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 transition-all cursor-pointer"
+                >
+                  <span class="font-mono text-xs font-bold text-zinc-200 block">Whey + Banana</span>
+                  <span class="font-mono text-[10px] text-emerald-400">290 kcal • 36P • 31C • 2F</span>
+                </button>
+                <button
+                  type="button"
+                  data-preset="chicken_rice"
+                  class="quick-preset-btn min-h-[52px] text-left p-3 rounded-lg bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 transition-all cursor-pointer"
+                >
+                  <span class="font-mono text-xs font-bold text-zinc-200 block">Chicken & Jasmine Rice</span>
+                  <span class="font-mono text-[10px] text-emerald-400">680 kcal • 58P • 84C • 11F</span>
+                </button>
+                <button
+                  type="button"
+                  data-preset="eggs_toast"
+                  class="quick-preset-btn min-h-[52px] text-left p-3 rounded-lg bg-zinc-950 hover:bg-zinc-900 border border-zinc-800 hover:border-amber-500/50 transition-all cursor-pointer"
+                >
+                  <span class="font-mono text-xs font-bold text-zinc-200 block">4 Eggs & Sourdough</span>
+                  <span class="font-mono text-[10px] text-emerald-400">540 kcal • 34P • 42C • 25F</span>
+                </button>
+              </div>
+            </div>
+
+            <form id="manual-meal-form" class="space-y-4 pt-3 border-t border-zinc-800/80">
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-mono uppercase text-zinc-300 mb-1.5">
+                    MEAL DESIGNATION / NAME *
+                  </label>
+                  <input
+                    id="manual-name"
+                    type="text"
+                    required
+                    placeholder="e.g., Post-Workout Steak & Potatoes"
+                    class="w-full min-h-[44px] bg-zinc-950 border border-zinc-800 focus:border-amber-500 rounded-lg px-3.5 py-2.5 text-base sm:text-sm font-mono text-zinc-100 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-mono uppercase text-zinc-400 mb-1.5">
+                    PORTION WEIGHT
+                  </label>
+                  <input
+                    id="manual-weight"
+                    type="text"
+                    placeholder="e.g., 450g"
+                    class="w-full min-h-[44px] bg-zinc-950 border border-zinc-800 focus:border-amber-500 rounded-lg px-3.5 py-2.5 text-base sm:text-sm font-mono text-zinc-100 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div>
+                  <label class="block text-[11px] font-mono uppercase text-amber-400 mb-1">
+                    CALORIES (KCAL)
+                  </label>
+                  <input
+                    id="manual-calories"
+                    type="number"
+                    min="0"
+                    placeholder="Auto if blank"
+                    class="w-full min-h-[44px] bg-zinc-950 border border-zinc-800 focus:border-amber-500 rounded-lg px-3 py-2 text-base sm:text-sm font-mono text-zinc-100 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-mono uppercase text-emerald-400 mb-1">
+                    PROTEIN (G) *
+                  </label>
+                  <input
+                    id="manual-protein"
+                    type="number"
+                    min="0"
+                    required
+                    placeholder="0"
+                    class="w-full min-h-[44px] bg-zinc-950 border border-zinc-800 focus:border-emerald-500 rounded-lg px-3 py-2 text-base sm:text-sm font-mono text-zinc-100 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-mono uppercase text-sky-400 mb-1">
+                    CARBS (G) *
+                  </label>
+                  <input
+                    id="manual-carbs"
+                    type="number"
+                    min="0"
+                    required
+                    placeholder="0"
+                    class="w-full min-h-[44px] bg-zinc-950 border border-zinc-800 focus:border-sky-500 rounded-lg px-3 py-2 text-base sm:text-sm font-mono text-zinc-100 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label class="block text-[11px] font-mono uppercase text-purple-400 mb-1">
+                    FAT (G) *
+                  </label>
+                  <input
+                    id="manual-fat"
+                    type="number"
+                    min="0"
+                    required
+                    placeholder="0"
+                    class="w-full min-h-[44px] bg-zinc-950 border border-zinc-800 focus:border-purple-500 rounded-lg px-3 py-2 text-base sm:text-sm font-mono text-zinc-100 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-mono uppercase text-zinc-400 mb-1.5">
+                  OPTIONAL MEAL NOTE
+                </label>
+                <input
+                  id="manual-notes"
+                  type="text"
+                  placeholder="e.g., Weighed raw on digital scale, zero-calorie seasoning"
+                  class="w-full min-h-[44px] bg-zinc-950 border border-zinc-800 rounded-lg px-3.5 py-2 text-base sm:text-xs font-mono text-zinc-200 focus:outline-none"
+                />
+              </div>
+
+              <button
+                type="submit"
+                class="w-full min-h-[48px] py-3 px-4 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-colors cursor-pointer"
+              >
+                <i data-lucide="plus" class="w-4 h-4 stroke-[2.5] shrink-0"></i>
+                <span>LOG MANUAL MEAL ENTRY</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN (5 COLS ON DESKTOP): DAILY MEAL LOG HISTORY -->
+      <div class="lg:col-span-5 bg-zinc-900/80 border border-zinc-800 rounded-lg overflow-hidden shadow-xl">
+        <div class="p-3.5 sm:p-4 border-b border-zinc-800 bg-zinc-950/60 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <i data-lucide="utensils" class="w-4 h-4 text-amber-400 shrink-0"></i>
+            <h2 class="text-xs font-mono font-bold uppercase tracking-wider text-zinc-200">
+              03 // DAILY LOG (<span id="log-count-badge">0</span>)
+            </h2>
+          </div>
+
+          <div id="reset-day-controls">
+            <button
+              id="reset-day-trigger"
+              class="min-h-[36px] px-2 text-[11px] font-mono text-zinc-400 hover:text-rose-400 transition-colors cursor-pointer"
+            >
+              [RESET DAY]
+            </button>
+            <div id="reset-day-confirm" class="hidden items-center gap-2">
+              <span class="text-[10px] font-mono text-rose-400">CLEAR ALL?</span>
+              <button
+                id="reset-day-yes"
+                class="min-h-[34px] px-2.5 py-1 text-[11px] font-mono bg-rose-600 hover:bg-rose-500 text-white rounded cursor-pointer"
+              >
+                YES
+              </button>
+              <button
+                id="reset-day-no"
+                class="min-h-[34px] px-2.5 py-1 text-[11px] font-mono bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded cursor-pointer"
+              >
+                NO
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="meal-logs-list" class="p-3.5 sm:p-4 space-y-3 lg:max-h-[680px] overflow-y-auto">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ================= MODAL: TARGETS & BIOMETRIC TDEE CALCULATOR ================= -->
+  <div
+    id="target-modal-backdrop"
+    class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4"
+  >
+    <div class="bg-zinc-900 border border-zinc-700 rounded-xl max-w-lg w-full max-h-[90vh] flex flex-col overflow-hidden shadow-2xl animate-fade-in">
+      <!-- Modal Header -->
+      <div class="p-3.5 sm:p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-950 shrink-0">
+        <div class="flex items-center gap-2 min-w-0">
+          <i data-lucide="target" class="w-4 h-4 text-amber-400 shrink-0"></i>
+          <h3 class="font-mono text-xs sm:text-sm font-bold uppercase tracking-wider truncate">
+            CONFIGURE DAILY MACRO TARGETS
+          </h3>
+        </div>
+        <button
+          id="close-target-modal-btn"
+          class="min-w-[40px] min-h-[40px] flex items-center justify-center text-zinc-400 hover:text-zinc-100 cursor-pointer"
+          aria-label="Close modal"
+        >
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Modal Sub-tabs -->
+      <div class="grid grid-cols-2 border-b border-zinc-800 bg-zinc-950/50 font-mono text-[11px] sm:text-xs shrink-0">
+        <button
+          id="modal-tab-custom"
+          class="min-h-[44px] py-2.5 px-2 uppercase cursor-pointer bg-zinc-900 text-amber-400 border-b-2 border-amber-500 font-bold"
+        >
+          DIRECT TARGET EDIT
+        </button>
+        <button
+          id="modal-tab-tdee"
+          class="min-h-[44px] py-2.5 px-2 uppercase flex items-center justify-center gap-1.5 cursor-pointer text-zinc-400 hover:text-zinc-200 border-b-2 border-transparent"
+        >
+          <i data-lucide="calculator" class="w-3.5 h-3.5 shrink-0"></i>
+          <span>BIOMETRIC TDEE</span>
+        </button>
+      </div>
+
+      <!-- Scrollable Modal Content -->
+      <div class="p-4 sm:p-5 overflow-y-auto">
+        <!-- Sub-panel: Custom Target Edit -->
+        <div id="modal-panel-custom" class="space-y-4">
+          <p class="text-xs font-mono text-zinc-400 leading-relaxed">
+            Customize your daily nutritional ceiling. Default values are calibrated for lean muscle hypertrophy (2650 kcal, 165g P, 300g C, 85g F).
+          </p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div>
+              <label class="block text-xs font-mono text-amber-400 mb-1">
+                DAILY CALORIES (KCAL)
+              </label>
+              <input
+                id="target-input-calories"
+                type="number"
+                class="w-full min-h-[44px] bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 font-mono text-base sm:text-sm text-zinc-100 focus:border-amber-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-mono text-emerald-400 mb-1">
+                PROTEIN TARGET (G)
+              </label>
+              <input
+                id="target-input-protein"
+                type="number"
+                class="w-full min-h-[44px] bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 font-mono text-base sm:text-sm text-zinc-100 focus:border-emerald-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-mono text-sky-400 mb-1">
+                CARBOHYDRATE TARGET (G)
+              </label>
+              <input
+                id="target-input-carbs"
+                type="number"
+                class="w-full min-h-[44px] bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 font-mono text-base sm:text-sm text-zinc-100 focus:border-sky-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label class="block text-xs font-mono text-purple-400 mb-1">
+                FAT TARGET (G)
+              </label>
+              <input
+                id="target-input-fat"
+                type="number"
+                class="w-full min-h-[44px] bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 font-mono text-base sm:text-sm text-zinc-100 focus:border-purple-500 focus:outline-none"
+              />
+            </div>
+          </div>
+
+          <!-- Terminal Passcode Configuration -->
+          <div class="pt-3 border-t border-zinc-800">
+            <label class="block text-xs font-mono text-zinc-300 mb-1">
+              TERMINAL ACCESS PASSCODE (DEFAULT: OPS2026)
+            </label>
+            <input
+              id="target-input-passcode"
+              type="text"
+              placeholder="OPS2026"
+              class="w-full min-h-[44px] bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 font-mono text-base sm:text-xs text-amber-400 focus:border-amber-500 focus:outline-none"
+            />
+          </div>
+
+          <div class="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-3 border-t border-zinc-800">
+            <button
+              id="reset-default-targets-btn"
+              class="min-h-[44px] px-3.5 py-2 rounded-lg border border-zinc-700 text-xs font-mono text-zinc-300 hover:bg-zinc-800 cursor-pointer"
+            >
+              DEFAULT (2650 KCAL)
+            </button>
+            <button
+              id="save-targets-btn"
+              class="min-h-[44px] px-5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono font-bold text-xs uppercase cursor-pointer"
+            >
+              SAVE TARGETS
+            </button>
+          </div>
+        </div>
+
+        <!-- Sub-panel: Biometric TDEE Calculator (Pre-filled 25yo male, 189cm, 80.5kg, 3x/wk) -->
+        <div id="modal-panel-tdee" class="hidden space-y-4">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-mono text-zinc-400 mb-1">BIOLOGICAL SEX</label>
+              <select
+                id="tdee-gender"
+                class="w-full min-h-[44px] bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 font-mono text-base sm:text-xs text-zinc-100"
+              >
+                <option value="male" selected>MALE</option>
+                <option value="female">FEMALE</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-mono text-zinc-400 mb-1">AGE (YEARS)</label>
+              <input
+                id="tdee-age"
+                type="number"
+                value="25"
+                class="w-full min-h-[44px] bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 font-mono text-base sm:text-xs text-zinc-100"
+              />
+            </div>
+            <div>
+              <label class="block text-[11px] font-mono text-zinc-400 mb-1">WEIGHT (KG)</label>
+              <input
+                id="tdee-weight"
+                type="number"
+                step="0.1"
+                value="80.5"
+                class="w-full min-h-[44px] bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 font-mono text-base sm:text-xs text-zinc-100"
+              />
+            </div>
+            <div>
+              <label class="block text-[11px] font-mono text-zinc-400 mb-1">HEIGHT (CM)</label>
+              <input
+                id="tdee-height"
+                type="number"
+                value="189"
+                class="w-full min-h-[44px] bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 font-mono text-base sm:text-xs text-zinc-100"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-mono text-zinc-400 mb-1">TRAINING / ACTIVITY MULTIPLIER</label>
+            <select
+              id="tdee-activity"
+              class="w-full min-h-[44px] bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 font-mono text-base sm:text-xs text-zinc-100"
+            >
+              <option value="1.2">SEDENTARY (DESK JOB, MINIMAL TRAINING)</option>
+              <option value="1.375" selected>3X/WEEK STRENGTH TRAINING (LIGHT-MODERATE)</option>
+              <option value="1.55">4-5X/WEEK HYPERTROPHY TRAINING (MODERATE)</option>
+              <option value="1.725">6-7X/WEEK HIGH VOLUME ATHLETE</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-mono text-zinc-400 mb-1">OBJECTIVE PROTOCOL</label>
+            <select
+              id="tdee-goal"
+              class="w-full min-h-[44px] bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 font-mono text-base sm:text-xs text-zinc-100"
+            >
+              <option value="lean_bulk" selected>LEAN MUSCLE HYPERTROPHY (+250 KCAL SURPLUS)</option>
+              <option value="maintain">BODY RECOMPOSITION / MAINTENANCE</option>
+              <option value="cut">FAT LOSS / SHRED (-450 KCAL DEFICIT)</option>
+            </select>
+          </div>
+
+          <button
+            id="compute-tdee-btn"
+            class="w-full min-h-[48px] py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-mono font-bold text-xs uppercase tracking-wider cursor-pointer"
+          >
+            COMPUTE & POPULATE TARGETS
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= APPLICATION VANILLA JAVASCRIPT ================= -->
+  <script>
+    // --- CONSTANTS & DEFAULT CONFIG ---
+    const DEFAULT_PASSCODE = 'OPS2026';
+
+    const DEFAULT_TARGETS = {
+      calories: 2650,
+      protein: 165,
+      carbs: 300,
+      fat: 85
+    };
+
+    const INITIAL_LOGS = [
+      {
+        id: 'demo-1',
+        time: '08:15',
+        mealName: 'Tactical Oats & Whey Isolate',
+        estimatedWeight: '410g',
+        calories: 640,
+        protein: 52,
+        carbs: 78,
+        fat: 13,
+        qualityScore: 9.2,
+        items: [
+          { name: 'Rolled Oats', weight: '80g dry', calories: 304, protein: 11, carbs: 54, fat: 5 },
+          { name: 'Whey Protein Isolate', weight: '45g', calories: 170, protein: 38, carbs: 2, fat: 1 },
+          { name: 'Wild Blueberries', weight: '75g', calories: 42, protein: 0.5, carbs: 10, fat: 0 },
+          { name: 'Almond Butter', weight: '15g', calories: 98, protein: 3, carbs: 3, fat: 8 }
+        ],
+        whatsGood: [
+          'High leucine content from whey isolate triggers immediate muscle protein synthesis.',
+          'Complex low-GI carbohydrates provide sustained morning glycogen replenishment.',
+          'Anthocyanins in wild blueberries assist with oxidative recovery.'
+        ],
+        whatsNot: [
+          'Low sodium content for a pre-training meal; consider adding a pinch of sea salt.',
+          'Lack of savory micronutrients (spinach/greens).'
+        ],
+        optimizationTip: 'Add 1/4 tsp of iodized sea salt to improve cellular hydration and pump before strength training.'
+      }
+    ];
+
+    const QUICK_PRESETS = {
+      shake: {
+        name: 'Whey Isolate + Medium Banana',
+        weight: '380g',
+        calories: 290,
+        protein: 36,
+        carbs: 31,
+        fat: 2,
+        notes: 'Rapid post-workout anabolic recovery shake'
+      },
+      chicken_rice: {
+        name: 'Grilled Chicken Breast & Jasmine Rice',
+        weight: '480g',
+        calories: 680,
+        protein: 58,
+        carbs: 84,
+        fat: 11,
+        notes: 'Cooked with 1 tsp extra virgin olive oil'
+      },
+      eggs_toast: {
+        name: '4 Whole Pasture Eggs & Sourdough Toast',
+        weight: '340g',
+        calories: 540,
+        protein: 34,
+        carbs: 42,
+        fat: 25,
+        notes: 'Rich in choline, healthy dietary cholesterol, and complete proteins'
+      }
+    };
+
+    // --- APPLICATION STATE ---
+    let state = {
+      passcode: loadFromStorage('tactical_macro_passcode_v2', DEFAULT_PASSCODE),
+      isUnlocked: localStorage.getItem('tactical_macro_unlocked') === 'true',
+      targets: loadFromStorage('tactical_macro_targets_v2', DEFAULT_TARGETS),
+      mealLogs: loadFromStorage('tactical_macro_logs_v2', INITIAL_LOGS),
+      expandedLogIds: ['demo-1'],
+      imagePreview: null,
+      imageBase64: null,
+      imageMimeType: 'image/jpeg',
+      currentAnalysis: null,
+      isAnalyzing: false
+    };
+
+    function loadFromStorage(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : fallback;
+      } catch (e) {
+        return fallback;
+      }
+    }
+
+    function saveToStorage() {
+      try {
+        localStorage.setItem('tactical_macro_passcode_v2', JSON.stringify(state.passcode));
+        localStorage.setItem('tactical_macro_targets_v2', JSON.stringify(state.targets));
+        localStorage.setItem('tactical_macro_logs_v2', JSON.stringify(state.mealLogs));
+      } catch (e) {
+        console.error('Storage error:', e);
+      }
+    }
+
+    // --- AUTH GATE / LOCK SCREEN LOGIC ---
+    const authGate = document.getElementById('auth-gate');
+    const authCard = document.getElementById('auth-card');
+    const authForm = document.getElementById('auth-form');
+    const authPasswordInput = document.getElementById('auth-password-input');
+    const authErrorMsg = document.getElementById('auth-error-msg');
+    const authHintCode = document.getElementById('auth-hint-code');
+    const authStatusIndicator = document.getElementById('auth-status-indicator');
+
+    function syncAuthGateUI() {
+      authHintCode.textContent = state.passcode || DEFAULT_PASSCODE;
+      if (state.isUnlocked) {
+        authGate.classList.add('hidden');
+      } else {
+        authGate.classList.remove('hidden');
+        setTimeout(() => authPasswordInput.focus(), 50);
+      }
+    }
+
+    authForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const entered = authPasswordInput.value.trim();
+      const expected = state.passcode || DEFAULT_PASSCODE;
+
+      if (entered === expected) {
+        state.isUnlocked = true;
+        localStorage.setItem('tactical_macro_unlocked', 'true');
+        authErrorMsg.classList.add('hidden');
+        authErrorMsg.classList.remove('flex');
+        authStatusIndicator.textContent = 'ACCESS GRANTED';
+        authStatusIndicator.className = 'text-emerald-400 font-bold text-right';
+        authPasswordInput.value = '';
+        syncAuthGateUI();
+        showToast('Terminal unlocked. Welcome back, Operator.');
+      } else {
+        authErrorMsg.classList.remove('hidden');
+        authErrorMsg.classList.add('flex');
+        authStatusIndicator.textContent = 'UNAUTHORIZED ATTEMPT';
+        authStatusIndicator.className = 'text-rose-400 font-bold text-right';
+        authCard.classList.remove('animate-shake');
+        void authCard.offsetWidth; // trigger reflow
+        authCard.classList.add('animate-shake');
+        authPasswordInput.select();
+      }
+    });
+
+    // Show / Hide Password Toggle
+    document.getElementById('toggle-password-vis-btn').addEventListener('click', () => {
+      const isPwd = authPasswordInput.type === 'password';
+      authPasswordInput.type = isPwd ? 'text' : 'password';
+      document.getElementById('eye-icon-open').classList.toggle('hidden', isPwd);
+      document.getElementById('eye-icon-closed').classList.toggle('hidden', !isPwd);
+    });
+
+    // Quick-Fill Default Passcode Hint Button
+    document.getElementById('fill-default-passcode-btn').addEventListener('click', () => {
+      authPasswordInput.value = state.passcode || DEFAULT_PASSCODE;
+      authPasswordInput.focus();
+    });
+
+    // Lock Terminal Button in Header
+    document.getElementById('lock-terminal-btn').addEventListener('click', () => {
+      state.isUnlocked = false;
+      localStorage.removeItem('tactical_macro_unlocked');
+      authStatusIndicator.textContent = 'AWAITING PASSCODE...';
+      authStatusIndicator.className = 'text-amber-400 text-right';
+      authErrorMsg.classList.add('hidden');
+      authErrorMsg.classList.remove('flex');
+      syncAuthGateUI();
+      showToast('Terminal session locked.');
+    });
+
+    // --- HELPER: Toast Notification ---
+    let toastTimeout = null;
+    function showToast(message) {
+      const container = document.getElementById('toast-container');
+      const textEl = document.getElementById('toast-message');
+      textEl.textContent = message;
+      container.classList.remove('hidden');
+      container.classList.add('flex');
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
+        container.classList.add('hidden');
+        container.classList.remove('flex');
+      }, 3500);
+    }
+
+    // --- HELPER: Exponential Backoff Fetch ---
+    async function fetchWithRetry(url, options, maxRetries = 4) {
+      const delays = [1000, 2000, 4000, 8000];
+      for (let i = 0; i <= maxRetries; i++) {
+        try {
+          const response = await fetch(url, options);
+          if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData?.error?.message || `HTTP Status ${response.status}`);
+          }
+          return await response.json();
+        } catch (error) {
+          if (i === maxRetries) throw error;
+          await new Promise(r => setTimeout(r, delays[i] || 8000));
+        }
+      }
+    }
+
+    // --- HELPER: Compress & Resize Image File ---
+    function processImageFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_DIM = 1024;
+            let width = img.width;
+            let height = img.height;
+
+            if (width > height && width > MAX_DIM) {
+              height = Math.round((height * MAX_DIM) / width);
+              width = MAX_DIM;
+            } else if (height >= width && height > MAX_DIM) {
+              width = Math.round((width * MAX_DIM) / height);
+              height = MAX_DIM;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+            const base64Data = dataUrl.split(',')[1];
+            resolve({ dataUrl, base64Data, mimeType: 'image/jpeg' });
+          };
+          img.onerror = () => reject(new Error('Failed to decode image'));
+          img.src = event.target.result;
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // --- RENDER: MACRO TELEMETRY DASHBOARD ---
+    function renderDashboard() {
+      const totals = state.mealLogs.reduce(
+        (acc, meal) => ({
+          calories: acc.calories + (Number(meal.calories) || 0),
+          protein: acc.protein + (Number(meal.protein) || 0),
+          carbs: acc.carbs + (Number(meal.carbs) || 0),
+          fat: acc.fat + (Number(meal.fat) || 0)
+        }),
+        { calories: 0, protein: 0, carbs: 0, fat: 0 }
+      );
+
+      const totalCalsSafe = Math.max(1, totals.calories);
+      const cards = [
+        {
+          label: 'ENERGY BUDGET',
+          unit: ' kcal',
+          current: Math.round(totals.calories),
+          target: state.targets.calories,
+          accentColor: 'text-amber-400',
+          barColor: 'bg-amber-500',
+          subLabel: 'ANABOLIC SURPLUS'
+        },
+        {
+          label: 'PROTEIN SYNTHESIS',
+          unit: 'g',
+          current: Math.round(totals.protein),
+          target: state.targets.protein,
+          accentColor: 'text-emerald-400',
+          barColor: 'bg-emerald-500',
+          subLabel: `${Math.round(((totals.protein * 4) / totalCalsSafe) * 100)}% OF KCAL`
+        },
+        {
+          label: 'GLYCOGEN / CARBS',
+          unit: 'g',
+          current: Math.round(totals.carbs),
+          target: state.targets.carbs,
+          accentColor: 'text-sky-400',
+          barColor: 'bg-sky-500',
+          subLabel: `${Math.round(((totals.carbs * 4) / totalCalsSafe) * 100)}% OF KCAL`
+        },
+        {
+          label: 'LIPIDS / FATS',
+          unit: 'g',
+          current: Math.round(totals.fat),
+          target: state.targets.fat,
+          accentColor: 'text-purple-400',
+          barColor: 'bg-purple-500',
+          subLabel: `${Math.round(((totals.fat * 9) / totalCalsSafe) * 100)}% OF KCAL`
+        }
+      ];
+
+      const gridEl = document.getElementById('macro-dashboard-grid');
+      gridEl.innerHTML = cards.map(c => {
+        const pct = c.target > 0 ? Math.min(100, Math.round((c.current / c.target) * 100)) : 0;
+        const rawPct = c.target > 0 ? Math.round((c.current / c.target) * 100) : 0;
+        const isOver = c.current > c.target;
+        const remaining = c.target - c.current;
+
+        return `
+          <div class="bg-zinc-900/90 border border-zinc-800 p-3.5 sm:p-4 rounded-lg relative overflow-hidden hover:border-zinc-700 transition-colors">
+            <div class="flex justify-between items-start gap-2 mb-2">
+              <div class="min-w-0">
+                <span class="text-[11px] font-mono uppercase tracking-widest text-zinc-400 block truncate">
+                  ${c.label}
+                </span>
+                <div class="flex items-baseline gap-1.5 mt-0.5 flex-wrap">
+                  <span class="text-xl sm:text-2xl lg:text-3xl font-mono font-bold tracking-tight ${c.accentColor}">
+                    ${c.current}
+                  </span>
+                  <span class="text-xs font-mono text-zinc-500">
+                    / ${c.target}${c.unit}
+                  </span>
+                </div>
+              </div>
+              <span class="text-xs font-mono px-2 py-0.5 rounded border shrink-0 ${
+                isOver
+                  ? 'bg-rose-950/60 border-rose-700/60 text-rose-400'
+                  : 'bg-zinc-950 border-zinc-800 text-zinc-400'
+              }">
+                ${rawPct}%
+              </span>
+            </div>
+
+            <div class="w-full h-2.5 bg-zinc-950 rounded-sm overflow-hidden border border-zinc-800/80 p-0.5 my-2.5">
+              <div
+                class="h-full transition-all duration-500 rounded-sm ${isOver ? 'bg-rose-500' : c.barColor}"
+                style="width: ${pct}%"
+              ></div>
+            </div>
+
+            <div class="flex justify-between items-center gap-2 text-[11px] font-mono text-zinc-400">
+              <span class="truncate">${c.subLabel}</span>
+              <span class="shrink-0">
+                ${remaining >= 0 ? `${remaining}${c.unit} REM` : `+${Math.abs(remaining)}${c.unit} OVER`}
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // --- RENDER: DAILY MEAL LOGS ---
+    function renderMealLogs() {
+      const listEl = document.getElementById('meal-logs-list');
+      const countBadge = document.getElementById('log-count-badge');
+      const resetControls = document.getElementById('reset-day-controls');
+
+      countBadge.textContent = state.mealLogs.length;
+      resetControls.style.display = state.mealLogs.length > 0 ? 'block' : 'none';
+
+      if (state.mealLogs.length === 0) {
+        listEl.innerHTML = `
+          <div class="text-center py-10 sm:py-12 px-4 border border-dashed border-zinc-800 rounded-lg">
+            <i data-lucide="utensils" class="w-8 h-8 text-zinc-600 mx-auto mb-2"></i>
+            <p class="text-xs font-mono text-zinc-400 uppercase">
+              NO MEALS LOGGED FOR CURRENT CYCLE
+            </p>
+            <p class="text-[11px] font-mono text-zinc-600 mt-1">
+              Scan a meal photo or enter macros manually to begin tracking.
+            </p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      listEl.innerHTML = state.mealLogs.map(meal => {
+        const isExpanded = state.expandedLogIds.includes(meal.id);
+        const hasDetails =
+          (meal.whatsGood && meal.whatsGood.length > 0) ||
+          (meal.whatsNot && meal.whatsNot.length > 0) ||
+          (meal.items && meal.items.length > 0);
+
+        return `
+          <div class="bg-zinc-950 border border-zinc-800/90 rounded-lg overflow-hidden transition-all hover:border-zinc-700">
+            <div class="p-3 sm:p-3.5">
+              <div class="flex items-start justify-between gap-2">
+                <div class="flex items-start gap-2.5 min-w-0">
+                  ${meal.thumbnail ? `
+                    <img src="${meal.thumbnail}" alt="${escapeHtml(meal.mealName)}" class="w-11 h-11 rounded object-cover border border-zinc-700 shrink-0" />
+                  ` : ''}
+                  <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <span class="text-[10px] font-mono px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-400 rounded">
+                        ${escapeHtml(meal.time)}
+                      </span>
+                      ${meal.estimatedWeight ? `
+                        <span class="text-[10px] font-mono px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded">
+                          ${escapeHtml(meal.estimatedWeight)}
+                        </span>
+                      ` : ''}
+                      ${meal.qualityScore ? `
+                        <span class="text-[10px] font-mono px-1.5 py-0.5 bg-emerald-950/60 border border-emerald-800/60 text-emerald-400 rounded">
+                          SCORE ${meal.qualityScore}/10
+                        </span>
+                      ` : ''}
+                    </div>
+                    <h3 class="text-sm font-mono font-bold text-zinc-100 mt-1 break-words">
+                      ${escapeHtml(meal.mealName)}
+                    </h3>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-1 shrink-0">
+                  ${hasDetails ? `
+                    <button
+                      onclick="toggleExpandLog('${meal.id}')"
+                      class="min-w-[38px] min-h-[38px] flex items-center justify-center text-zinc-400 hover:text-amber-400 rounded bg-zinc-900 border border-zinc-800 cursor-pointer"
+                      title="Toggle AI Critique"
+                    >
+                      <i data-lucide="${isExpanded ? 'chevron-up' : 'chevron-down'}" class="w-4 h-4"></i>
+                    </button>
+                  ` : ''}
+                  <button
+                    onclick="deleteMealLog('${meal.id}')"
+                    class="min-w-[38px] min-h-[38px] flex items-center justify-center text-zinc-500 hover:text-rose-400 rounded bg-zinc-900 border border-zinc-800 cursor-pointer"
+                    title="Delete Entry"
+                  >
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Macro Pill Bar -->
+              <div class="grid grid-cols-4 gap-1.5 mt-3 pt-2.5 border-t border-zinc-900 text-center font-mono">
+                <div class="bg-zinc-900/80 py-1.5 px-1 sm:px-2 rounded">
+                  <span class="text-[9px] sm:text-[10px] text-zinc-500 block">KCAL</span>
+                  <span class="text-xs font-bold text-amber-400">${meal.calories}</span>
+                </div>
+                <div class="bg-zinc-900/80 py-1.5 px-1 sm:px-2 rounded">
+                  <span class="text-[9px] sm:text-[10px] text-zinc-500 block">PRO</span>
+                  <span class="text-xs font-bold text-emerald-400">${meal.protein}g</span>
+                </div>
+                <div class="bg-zinc-900/80 py-1.5 px-1 sm:px-2 rounded">
+                  <span class="text-[9px] sm:text-[10px] text-zinc-500 block">CARB</span>
+                  <span class="text-xs font-bold text-sky-400">${meal.carbs}g</span>
+                </div>
+                <div class="bg-zinc-900/80 py-1.5 px-1 sm:px-2 rounded">
+                  <span class="text-[9px] sm:text-[10px] text-zinc-500 block">FAT</span>
+                  <span class="text-xs font-bold text-purple-400">${meal.fat}g</span>
+                </div>
+              </div>
+            </div>
+
+            ${isExpanded && hasDetails ? `
+              <div class="px-3 sm:px-3.5 pb-3.5 pt-2 bg-zinc-900/40 border-t border-zinc-800/80 space-y-2.5 text-xs">
+                ${meal.items && meal.items.length > 0 ? `
+                  <div class="text-[11px] font-mono text-zinc-400">
+                    <span class="text-zinc-500 uppercase block mb-1">INGREDIENTS & WEIGHTS:</span>
+                    <div class="flex flex-wrap gap-1.5">
+                      ${meal.items.map(it => `
+                        <span class="px-2 py-0.5 bg-zinc-950 border border-zinc-800 rounded text-zinc-300">
+                          ${escapeHtml(it.name)} (${escapeHtml(it.weight || it.portion || '')})
+                        </span>
+                      `).join('')}
+                    </div>
+                  </div>
+                ` : ''}
+
+                ${meal.whatsGood && meal.whatsGood.length > 0 ? `
+                  <div class="p-2.5 rounded bg-emerald-950/20 border border-emerald-900/40">
+                    <span class="text-[10px] font-mono uppercase font-bold text-emerald-400 block mb-1">
+                      + WHAT'S GOOD:
+                    </span>
+                    <ul class="space-y-1 text-zinc-300 text-[11px]">
+                      ${meal.whatsGood.map(g => `<li>• ${escapeHtml(g)}</li>`).join('')}
+                    </ul>
+                  </div>
+                ` : ''}
+
+                ${meal.whatsNot && meal.whatsNot.length > 0 ? `
+                  <div class="p-2.5 rounded bg-rose-950/20 border border-rose-900/40">
+                    <span class="text-[10px] font-mono uppercase font-bold text-rose-400 block mb-1">
+                      - WHAT'S NOT:
+                    </span>
+                    <ul class="space-y-1 text-zinc-300 text-[11px]">
+                      ${meal.whatsNot.map(b => `<li>• ${escapeHtml(b)}</li>`).join('')}
+                    </ul>
+                  </div>
+                ` : ''}
+
+                ${meal.optimizationTip ? `
+                  <div class="p-2 rounded bg-amber-500/10 border border-amber-500/30 text-[11px] text-amber-300 font-mono">
+                    <strong class="uppercase">UPGRADE TIP: </strong>
+                    ${escapeHtml(meal.optimizationTip)}
+                  </div>
+                ` : ''}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    // Global log actions
+    window.toggleExpandLog = function(id) {
+      if (state.expandedLogIds.includes(id)) {
+        state.expandedLogIds = state.expandedLogIds.filter(item => item !== id);
+      } else {
+        state.expandedLogIds.push(id);
+      }
+      renderMealLogs();
+    };
+
+    window.deleteMealLog = function(id) {
+      state.mealLogs = state.mealLogs.filter(item => item.id !== id);
+      saveToStorage();
+      renderDashboard();
+      renderMealLogs();
+      if (window.saveLogsToFirebase) window.saveLogsToFirebase();
+      showToast('Meal entry removed.');
+    };
+
+    // --- IMAGE UPLOAD & DRAG-AND-DROP HANDLERS ---
+    const fileInput = document.getElementById('meal-file-input');
+    const dropzone = document.getElementById('upload-dropzone');
+    const previewContainer = document.getElementById('image-preview-container');
+    const previewImg = document.getElementById('image-preview-el');
+    const clearImageBtn = document.getElementById('clear-image-btn');
+
+    dropzone.addEventListener('click', () => fileInput.click());
+
+    dropzone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropzone.classList.add('border-amber-500', 'bg-zinc-900');
+    });
+
+    dropzone.addEventListener('dragleave', () => {
+      dropzone.classList.remove('border-amber-500', 'bg-zinc-900');
+    });
+
+    dropzone.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      dropzone.classList.remove('border-amber-500', 'bg-zinc-900');
+      const file = e.dataTransfer?.files?.[0];
+      if (file) await handleSelectedFile(file);
+    });
+
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (file) await handleSelectedFile(file);
+    });
+
+    async function handleSelectedFile(file) {
+      hideAiError();
+      try {
+        const processed = await processImageFile(file);
+        state.imagePreview = processed.dataUrl;
+        state.imageBase64 = processed.base64Data;
+        state.imageMimeType = processed.mimeType;
+
+        previewImg.src = processed.dataUrl;
+        dropzone.classList.add('hidden');
+        previewContainer.classList.remove('hidden');
+        previewContainer.classList.add('flex');
+        clearImageBtn.classList.remove('hidden');
+        clearImageBtn.classList.add('flex');
+      } catch (err) {
+        showAiError('Could not process image file. Please try another picture.');
+      }
+    }
+
+    function clearImageSelection() {
+      state.imagePreview = null;
+      state.imageBase64 = null;
+      state.currentAnalysis = null;
+      fileInput.value = '';
+      previewImg.src = '';
+      dropzone.classList.remove('hidden');
+      previewContainer.classList.add('hidden');
+      previewContainer.classList.remove('flex');
+      clearImageBtn.classList.add('hidden');
+      clearImageBtn.classList.remove('flex');
+      document.getElementById('ai-results-container').classList.add('hidden');
+      hideAiError();
+    }
+
+    clearImageBtn.addEventListener('click', clearImageSelection);
+
+    function showAiError(msg) {
+      const banner = document.getElementById('ai-error-banner');
+      document.getElementById('ai-error-text').textContent = msg;
+      banner.classList.remove('hidden');
+      banner.classList.add('flex');
+    }
+
+    function hideAiError() {
+      const banner = document.getElementById('ai-error-banner');
+      banner.classList.add('hidden');
+      banner.classList.remove('flex');
+    }
+
+    // --- GEMINI MULTIMODAL MEAL ANALYSIS ---
+    document.getElementById('analyze-meal-btn').addEventListener('click', async () => {
+      const userNote = document.getElementById('ai-user-note').value.trim();
+      if (!state.imageBase64 && !userNote) {
+        showAiError('Please upload a meal photo or provide a detailed text description.');
+        return;
+      }
+
+      hideAiError();
+      setAnalyzingUI(true);
+
+      const apiKey = window.GEMINI_API_KEY || "";
+      if (!apiKey) {
+        showAiError('API Key not loaded from Firebase yet. Wait a second and retry.');
+        setAnalyzingUI(false);
+        return;
+      }
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+      const systemInstruction = `You are an elite sports nutritionist and tactical performance dietitian specializing in lean muscle hypertrophy (target profile: 25yo male, 189cm, 80.5kg, strength training 3x/week), body recomposition, and metabolic health.
+Analyze the provided meal image and/or user text context.
+Provide an accurate, realistic assessment of the food items, estimated weights in grams, and macronutrients (Calories, Protein, Carbohydrates, Fat).
+Rate the overall meal quality on a 1 to 10 scale ("qualityScore").
+Critically evaluate the meal into:
+- "whatsGood": Specific positive nutritional traits (e.g., high leucine/complete protein, clean glycogen source, fiber, micronutrients).
+- "whatsNot": Honest nutritional drawbacks or issues (e.g., excess saturated fat, hidden seed oils, high sodium, low protein-to-calorie ratio, glycemic spike).
+- "optimizationTip": One concrete, actionable tactical adjustment to upgrade this exact meal for lean muscle growth or health.`;
+
+      const promptText = userNote
+        ? `Analyze this meal. User context/notes: "${userNote}". Return accurate itemized weights, macros, quality score (1-10), "What's Good", and "What's Not".`
+        : `Analyze this meal picture. Estimate total and itemized weights in grams, calculate macros, rate quality (1-10), and provide a strict nutritional critique ("What's Good" and "What's Not").`;
+
+      const parts = [{ text: promptText }];
+      if (state.imageBase64) {
+        parts.push({
+          inlineData: {
+            mimeType: state.imageMimeType,
+            data: state.imageBase64
+          }
+        });
+      }
+
+      const payload = {
+        contents: [{ role: 'user', parts }],
+        systemInstruction: { parts: [{ text: systemInstruction }] },
+        generationConfig: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: 'OBJECT',
+            properties: {
+              mealName: { type: 'STRING' },
+              estimatedTotalWeight: { type: 'STRING' },
+              totalCalories: { type: 'NUMBER' },
+              totalProtein: { type: 'NUMBER' },
+              totalCarbs: { type: 'NUMBER' },
+              totalFat: { type: 'NUMBER' },
+              qualityScore: { type: 'NUMBER' },
+              items: {
+                type: 'ARRAY',
+                items: {
+                  type: 'OBJECT',
+                  properties: {
+                    name: { type: 'STRING' },
+                    weight: { type: 'STRING' },
+                    calories: { type: 'NUMBER' },
+                    protein: { type: 'NUMBER' },
+                    carbs: { type: 'NUMBER' },
+                    fat: { type: 'NUMBER' }
+                  },
+                  required: ['name', 'weight', 'calories', 'protein', 'carbs', 'fat']
+                }
+              },
+              whatsGood: {
+                type: 'ARRAY',
+                items: { type: 'STRING' }
+              },
+              whatsNot: {
+                type: 'ARRAY',
+                items: { type: 'STRING' }
+              },
+              optimizationTip: { type: 'STRING' }
+            },
+            required: [
+              'mealName',
+              'estimatedTotalWeight',
+              'totalCalories',
+              'totalProtein',
+              'totalCarbs',
+              'totalFat',
+              'qualityScore',
+              'items',
+              'whatsGood',
+              'whatsNot',
+              'optimizationTip'
+            ]
+          }
+        }
+      };
+
+      try {
+        const result = await fetchWithRetry(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const rawJson = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!rawJson) throw new Error('Empty response from Gemini Vision engine.');
+
+        const parsed = JSON.parse(rawJson);
+        state.currentAnalysis = parsed;
+        displayAnalysisResult(parsed);
+        showToast('Telemetry scan complete. Review macros below.');
+      } catch (err) {
+        console.error('Gemini Analysis Error:', err);
+        showAiError(`Analysis failed: ${err.message || 'Please check connection and try again.'}`);
+      } finally {
+        setAnalyzingUI(false);
+      }
+    });
+
+    function setAnalyzingUI(isLoading) {
+      state.isAnalyzing = isLoading;
+      const btn = document.getElementById('analyze-meal-btn');
+      const btnText = document.getElementById('analyze-btn-text');
+      const beam = document.getElementById('scanner-beam-overlay');
+
+      btn.disabled = isLoading;
+      if (isLoading) {
+        btnText.textContent = 'RUNNING GEMINI VISION BIO-ANALYSIS...';
+        beam.classList.remove('hidden');
+      } else {
+        btnText.textContent = 'ANALYZE MEAL & CRITIQUE MACROS';
+        beam.classList.add('hidden');
+      }
+    }
+
+    function displayAnalysisResult(data) {
+      const container = document.getElementById('ai-results-container');
+      container.classList.remove('hidden');
+
+      document.getElementById('res-meal-title').textContent = data.mealName || 'Analyzed Meal';
+      document.getElementById('res-meal-weight').textContent = data.estimatedTotalWeight ? `(${data.estimatedTotalWeight})` : '';
+
+      const score = Number(data.qualityScore) || 7.5;
+      const scoreBadge = document.getElementById('res-quality-score');
+      scoreBadge.textContent = `${score}/10`;
+      scoreBadge.className = `px-2.5 py-1 rounded font-mono text-xs font-bold border ${
+        score >= 7.5
+          ? 'bg-emerald-950/80 border-emerald-600 text-emerald-400'
+          : score >= 5.0
+          ? 'bg-amber-950/80 border-amber-600 text-amber-400'
+          : 'bg-rose-950/80 border-rose-600 text-rose-400'
+      }`;
+
+      // Render itemized ingredients
+      const itemsList = document.getElementById('res-items-list');
+      itemsList.innerHTML = (data.items || []).map(item => `
+        <div class="p-2.5 sm:p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2">
+          <div class="min-w-0">
+            <span class="text-zinc-200 font-medium break-words">${escapeHtml(item.name)}</span>
+            <span class="text-zinc-500 ml-1.5">(${escapeHtml(item.weight)})</span>
+          </div>
+          <div class="flex flex-wrap items-center gap-2.5 sm:gap-3 text-[11px] shrink-0">
+            <span class="text-amber-400">${Math.round(item.calories)} kcal</span>
+            <span class="text-emerald-400">${Math.round(item.protein)}g P</span>
+            <span class="text-sky-400">${Math.round(item.carbs)}g C</span>
+            <span class="text-purple-400">${Math.round(item.fat)}g F</span>
+          </div>
+        </div>
+      `).join('');
+
+      // Render What's Good
+      const goodList = document.getElementById('res-whats-good');
+      goodList.innerHTML = (data.whatsGood || []).map(pt => `
+        <li class="flex items-start gap-2 leading-relaxed">
+          <span class="text-emerald-400 font-mono font-bold">+</span>
+          <span>${escapeHtml(pt)}</span>
+        </li>
+      `).join('');
+
+      // Render What's Not
+      const notList = document.getElementById('res-whats-not');
+      if (data.whatsNot && data.whatsNot.length > 0) {
+        notList.innerHTML = data.whatsNot.map(pt => `
+          <li class="flex items-start gap-2 leading-relaxed">
+            <span class="text-rose-400 font-mono font-bold">-</span>
+            <span>${escapeHtml(pt)}</span>
+          </li>
+        `).join('');
+      } else {
+        notList.innerHTML = `<li class="text-zinc-400 italic">No major nutritional drawbacks detected.</li>`;
+      }
+
+      document.getElementById('res-optimization-tip').textContent = data.optimizationTip || '';
+
+      // Populate Editable Inputs
+      document.getElementById('edit-ai-name').value = data.mealName || 'Analyzed Meal';
+      document.getElementById('edit-ai-weight').value = data.estimatedTotalWeight || '';
+      document.getElementById('edit-ai-calories').value = Math.round(data.totalCalories || 0);
+      document.getElementById('edit-ai-protein').value = Math.round(data.totalProtein || 0);
+      document.getElementById('edit-ai-carbs').value = Math.round(data.totalCarbs || 0);
+      document.getElementById('edit-ai-fat').value = Math.round(data.totalFat || 0);
+
+      lucide.createIcons();
+    }
+
+    // --- COMMIT AI ANALYZED MEAL TO LOG ---
+    document.getElementById('commit-ai-meal-btn').addEventListener('click', () => {
+      if (!state.currentAnalysis) return;
+
+      const now = new Date();
+      const timeStr = now.toTimeString().slice(0, 5);
+      const newId = `meal-${Date.now()}`;
+
+      const newEntry = {
+        id: newId,
+        time: timeStr,
+        mealName: document.getElementById('edit-ai-name').value.trim() || state.currentAnalysis.mealName,
+        estimatedWeight: document.getElementById('edit-ai-weight').value.trim(),
+        calories: Number(document.getElementById('edit-ai-calories').value) || 0,
+        protein: Number(document.getElementById('edit-ai-protein').value) || 0,
+        carbs: Number(document.getElementById('edit-ai-carbs').value) || 0,
+        fat: Number(document.getElementById('edit-ai-fat').value) || 0,
+        qualityScore: state.currentAnalysis.qualityScore || 8,
+        items: state.currentAnalysis.items || [],
+        whatsGood: state.currentAnalysis.whatsGood || [],
+        whatsNot: state.currentAnalysis.whatsNot || [],
+        optimizationTip: state.currentAnalysis.optimizationTip || '',
+        thumbnail: state.imagePreview || null
+      };
+
+      state.mealLogs.unshift(newEntry);
+      state.expandedLogIds.unshift(newId);
+      saveToStorage();
+      renderDashboard();
+      renderMealLogs();
+      if (window.saveLogsToFirebase) window.saveLogsToFirebase();
+      document.getElementById('ai-user-note').value = '';
+      clearImageSelection();
+      showToast(`Logged "${newEntry.mealName}" to daily tracker.`);
+    });
+
+    // --- TABS: AI vs MANUAL ---
+    const tabBtnAi = document.getElementById('tab-btn-ai');
+    const tabBtnManual = document.getElementById('tab-btn-manual');
+    const panelAi = document.getElementById('panel-ai');
+    const panelManual = document.getElementById('panel-manual');
+
+    tabBtnAi.addEventListener('click', () => {
+      tabBtnAi.className = 'min-h-[48px] py-3 px-2 sm:px-4 font-mono text-[11px] sm:text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 border-b-2 border-amber-500 text-amber-400 bg-zinc-900/90 font-semibold transition-all cursor-pointer text-center';
+      tabBtnManual.className = 'min-h-[48px] py-3 px-2 sm:px-4 font-mono text-[11px] sm:text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 border-b-2 border-transparent text-zinc-400 hover:text-zinc-200 transition-all cursor-pointer text-center';
+      panelAi.classList.remove('hidden');
+      panelManual.classList.add('hidden');
+    });
+
+    tabBtnManual.addEventListener('click', () => {
+      tabBtnManual.className = 'min-h-[48px] py-3 px-2 sm:px-4 font-mono text-[11px] sm:text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 border-b-2 border-amber-500 text-amber-400 bg-zinc-900/90 font-semibold transition-all cursor-pointer text-center';
+      tabBtnAi.className = 'min-h-[48px] py-3 px-2 sm:px-4 font-mono text-[11px] sm:text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 border-b-2 border-transparent text-zinc-400 hover:text-zinc-200 transition-all cursor-pointer text-center';
+      panelManual.classList.remove('hidden');
+      panelAi.classList.add('hidden');
+    });
+
+    // --- QUICK-ADD PRESETS & MANUAL LOGGING ---
+    document.querySelectorAll('.quick-preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.getAttribute('data-preset');
+        const p = QUICK_PRESETS[key];
+        if (!p) return;
+        document.getElementById('manual-name').value = p.name;
+        document.getElementById('manual-weight').value = p.weight;
+        document.getElementById('manual-calories').value = p.calories;
+        document.getElementById('manual-protein').value = p.protein;
+        document.getElementById('manual-carbs').value = p.carbs;
+        document.getElementById('manual-fat').value = p.fat;
+        document.getElementById('manual-notes').value = p.notes;
+        showToast(`Preset "${p.name}" loaded into form.`);
+      });
+    });
+
+    document.getElementById('manual-meal-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('manual-name').value.trim();
+      if (!name) return;
+
+      const weight = document.getElementById('manual-weight').value.trim();
+      const calsInput = Number(document.getElementById('manual-calories').value) || 0;
+      const pro = Number(document.getElementById('manual-protein').value) || 0;
+      const crb = Number(document.getElementById('manual-carbs').value) || 0;
+      const ft = Number(document.getElementById('manual-fat').value) || 0;
+      const notes = document.getElementById('manual-notes').value.trim();
+
+      const finalCalories = calsInput > 0 ? calsInput : Math.round(pro * 4 + crb * 4 + ft * 9);
+      const now = new Date();
+      const timeStr = now.toTimeString().slice(0, 5);
+      const newId = `manual-${Date.now()}`;
+
+      const newEntry = {
+        id: newId,
+        time: timeStr,
+        mealName: name,
+        estimatedWeight: weight || null,
+        calories: finalCalories,
+        protein: pro,
+        carbs: crb,
+        fat: ft,
+        items: [],
+        whatsGood: notes ? [`Field Note: ${notes}`] : ['Manual macro entry logged.'],
+        whatsNot: [],
+        optimizationTip: ''
+      };
+
+      state.mealLogs.unshift(newEntry);
+      saveToStorage();
+      renderDashboard();
+      renderMealLogs();
+      if (window.saveLogsToFirebase) window.saveLogsToFirebase();
+      e.target.reset();
+      showToast(`Logged "${name}" manually.`);
+    });
+
+    // --- RESET DAY CONTROLS ---
+    const resetTrigger = document.getElementById('reset-day-trigger');
+    const resetConfirm = document.getElementById('reset-day-confirm');
+
+    resetTrigger.addEventListener('click', () => {
+      resetTrigger.classList.add('hidden');
+      resetConfirm.classList.remove('hidden');
+      resetConfirm.classList.add('flex');
+    });
+
+    document.getElementById('reset-day-no').addEventListener('click', () => {
+      resetConfirm.classList.add('hidden');
+      resetConfirm.classList.remove('flex');
+      resetTrigger.classList.remove('hidden');
+    });
+
+    document.getElementById('reset-day-yes').addEventListener('click', () => {
+      state.mealLogs = [];
+      saveToStorage();
+      renderDashboard();
+      renderMealLogs();
+      resetConfirm.classList.add('hidden');
+      resetConfirm.classList.remove('flex');
+      resetTrigger.classList.remove('hidden');
+      showToast('Daily log cleared.');
+    });
+
+    // --- TARGETS & BIOMETRIC TDEE MODAL ---
+    const modalBackdrop = document.getElementById('target-modal-backdrop');
+    const modalTabCustom = document.getElementById('modal-tab-custom');
+    const modalTabTdee = document.getElementById('modal-tab-tdee');
+    const modalPanelCustom = document.getElementById('modal-panel-custom');
+    const modalPanelTdee = document.getElementById('modal-panel-tdee');
+
+    function populateTargetModalInputs(t) {
+      document.getElementById('target-input-calories').value = t.calories;
+      document.getElementById('target-input-protein').value = t.protein;
+      document.getElementById('target-input-carbs').value = t.carbs;
+      document.getElementById('target-input-fat').value = t.fat;
+      document.getElementById('target-input-passcode').value = state.passcode || DEFAULT_PASSCODE;
+    }
+
+    document.getElementById('open-target-modal-btn').addEventListener('click', () => {
+      populateTargetModalInputs(state.targets);
+      modalBackdrop.classList.remove('hidden');
+      modalBackdrop.classList.add('flex');
+    });
+
+    document.getElementById('close-target-modal-btn').addEventListener('click', () => {
+      modalBackdrop.classList.add('hidden');
+      modalBackdrop.classList.remove('flex');
+    });
+
+    modalTabCustom.addEventListener('click', () => {
+      modalTabCustom.className = 'min-h-[44px] py-2.5 px-2 uppercase cursor-pointer bg-zinc-900 text-amber-400 border-b-2 border-amber-500 font-bold';
+      modalTabTdee.className = 'min-h-[44px] py-2.5 px-2 uppercase flex items-center justify-center gap-1.5 cursor-pointer text-zinc-400 hover:text-zinc-200 border-b-2 border-transparent';
+      modalPanelCustom.classList.remove('hidden');
+      modalPanelTdee.classList.add('hidden');
+    });
+
+    modalTabTdee.addEventListener('click', () => {
+      modalTabTdee.className = 'min-h-[44px] py-2.5 px-2 uppercase flex items-center justify-center gap-1.5 cursor-pointer bg-zinc-900 text-amber-400 border-b-2 border-amber-500 font-bold';
+      modalTabCustom.className = 'min-h-[44px] py-2.5 px-2 uppercase cursor-pointer text-zinc-400 hover:text-zinc-200 border-b-2 border-transparent';
+      modalPanelTdee.classList.remove('hidden');
+      modalPanelCustom.classList.add('hidden');
+    });
+
+    document.getElementById('reset-default-targets-btn').addEventListener('click', () => {
+      populateTargetModalInputs(DEFAULT_TARGETS);
+    });
+
+    document.getElementById('load-preset-targets-btn').addEventListener('click', () => {
+      state.targets = { ...DEFAULT_TARGETS };
+      saveToStorage();
+      renderDashboard();
+      showToast('Loaded Lean Mass Hypertrophy Targets (2650 kcal).');
+    });
+
+    document.getElementById('compute-tdee-btn').addEventListener('click', () => {
+      const gender = document.getElementById('tdee-gender').value;
+      const age = Number(document.getElementById('tdee-age').value) || 25;
+      const weight = Number(document.getElementById('tdee-weight').value) || 80.5;
+      const height = Number(document.getElementById('tdee-height').value) || 189;
+      const activity = Number(document.getElementById('tdee-activity').value) || 1.375;
+      const goal = document.getElementById('tdee-goal').value;
+
+      // Mifflin-St Jeor Equation
+      let bmr = 10 * weight + 6.25 * height - 5 * age;
+      bmr += gender === 'male' ? 5 : -161;
+
+      const tdee = bmr * activity;
+      let targetCals = tdee;
+      if (goal === 'lean_bulk') targetCals = tdee + 250;
+      if (goal === 'cut') targetCals = tdee - 450;
+
+      targetCals = Math.round(targetCals / 10) * 10;
+
+      // ~2.05g/kg protein for lean muscle hypertrophy
+      const proteinGrams = Math.round(weight * 2.05);
+      const fatGrams = Math.round((targetCals * 0.28) / 9);
+      const remainingCals = targetCals - (proteinGrams * 4 + fatGrams * 9);
+      const carbGrams = Math.max(50, Math.round(remainingCals / 4));
+
+      populateTargetModalInputs({
+        calories: targetCals,
+        protein: proteinGrams,
+        carbs: carbGrams,
+        fat: fatGrams
+      });
+
+      modalTabCustom.click();
+      showToast(`Computed TDEE targets (${targetCals} kcal). Click Save to apply.`);
+    });
+
+    document.getElementById('save-targets-btn').addEventListener('click', () => {
+      state.targets = {
+        calories: Math.max(500, Number(document.getElementById('target-input-calories').value) || 2650),
+        protein: Math.max(20, Number(document.getElementById('target-input-protein').value) || 165),
+        carbs: Math.max(20, Number(document.getElementById('target-input-carbs').value) || 300),
+        fat: Math.max(15, Number(document.getElementById('target-input-fat').value) || 85)
+      };
+      const newPasscode = document.getElementById('target-input-passcode').value.trim();
+      if (newPasscode) {
+        state.passcode = newPasscode;
+      }
+      saveToStorage();
+      syncAuthGateUI();
+      renderDashboard();
+      modalBackdrop.classList.add('hidden');
+      modalBackdrop.classList.remove('flex');
+      showToast('Daily macro targets & security settings updated.');
+    });
+
+    // --- INITIALIZE ON LOAD ---
+    window.addEventListener('DOMContentLoaded', () => {
+      syncAuthGateUI();
+      renderDashboard();
+      renderMealLogs();
+      lucide.createIcons();
+    });
+</script>
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCK2URxdAqHhex5RJLiueRdSIFo5Yze6jM",
+      authDomain: "macro-ops.firebaseapp.com",
+      projectId: "macro-ops",
+      storageBucket: "macro-ops.firebasestorage.app",
+      messagingSenderId: "240732235567",
+      appId: "1:240732235567:web:c375962039a9488ad7e3da"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUserId = null;
+
+    signInAnonymously(auth).catch(console.error);
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        currentUserId = user.uid;
+        listenToUserData(user.uid);
+      }
+    });
+
+    function listenToUserData(uid) {
+      const userDocRef = doc(db, "macro_ops", "shared_log");
+      onSnapshot(userDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.geminiApiKey) {
+            window.GEMINI_API_KEY = data.geminiApiKey;
+          }
+          if (data.mealLogs) {
+            state.mealLogs = data.mealLogs;
+            localStorage.setItem('tactical_macro_logs_v2', JSON.stringify(state.mealLogs));
+            renderDashboard();
+            renderMealLogs();
+          }
+        }
+      });
+    }
+
+    window.saveLogsToFirebase = async function() {
+      if (!currentUserId) return;
+      const userDocRef = doc(db, "macro_ops", "shared_log");
+      await setDoc(userDocRef, {
+        mealLogs: state.mealLogs,
+        lastUpdated: new Date().toISOString()
+      }, { merge: true });
+    };
+  </script>
+</body>
+</html>
