@@ -229,7 +229,7 @@
   </div>
 
   <!-- ================= TOP COMMAND HEADER ================= -->
-  <header class="sticky top-0 z-30 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/80">
+ <header class="sticky top-0 z-30 bg-zinc-950/90 backdrop-blur-md border-b border-zinc-800/80">
     <div class="max-w-7xl mx-auto px-3 sm:px-6 py-2.5 sm:py-3.5 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
       <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
         <div class="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-inner shrink-0">
@@ -251,6 +251,15 @@
       </div>
 
       <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+        <a
+          href="simulator.html"
+          class="min-h-[44px] px-3 sm:px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/80 text-xs font-mono text-amber-400 transition-colors cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2"
+          title="Open Biometric Simulator"
+        >
+          <i data-lucide="cpu" class="w-4 h-4 text-amber-400 shrink-0"></i>
+          <span class="text-[11px] sm:text-xs">SIMULATOR</span>
+        </a>
+
         <button
           id="open-target-modal-btn"
           class="min-h-[44px] px-3 sm:px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/80 text-xs font-mono text-zinc-200 transition-colors cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2"
@@ -1136,10 +1145,6 @@
       syncAuthGateUI();
       showToast('Terminal session locked.');
     });
-    <a href="simulator.html" class="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 rounded text-xs font-mono text-amber-400 flex items-center gap-1.5 transition">
-      <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
-        <span>SIMULATOR</span>
-    </a>
 
     // --- HELPER: Toast Notification ---
     let toastTimeout = null;
