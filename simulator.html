@@ -1003,14 +1003,19 @@
       showToast('Downloaded macro-ops-targets.json');
     });
 
-    // --- EXPORT ACTION 3: WRITE DIRECTLY TO LOCALSTORAGE ---
-    document.getElementById('sync-localstorage-btn').addEventListener('click', () => {
+    // --- EXPORT ACTION 3: WRITE DIRECTLY TO LOCALSTORAGE & FIREBASE ---
+    document.getElementById('sync-localstorage-btn').addEventListener('click', async () => {
       try {
         localStorage.setItem('tactical_macro_targets_v2', JSON.stringify(computedTargets));
         localStorage.setItem('tactical_macro_targets', JSON.stringify(computedTargets));
-        showToast('Targets written to MACRO//OPS localStorage!');
+        
+        if (window.saveSimulatorTargetsToFirebase) {
+          await window.saveSimulatorTargetsToFirebase(computedTargets);
+        }
+        
+        showToast('Targets written to MACRO//OPS & Firebase vault!');
       } catch (e) {
-        showToast('Could not write to localStorage in this browser context.');
+        showToast('Could not write targets to storage context.');
       }
     });
 
@@ -1019,6 +1024,43 @@
       runSimulation();
       lucide.createIcons();
     });
+  </script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCK2URxdAqHhex5RJLiueRdSIFo5Yze6jM",
+      authDomain: "macro-ops.firebaseapp.com",
+      projectId: "macro-ops",
+      storageBucket: "macro-ops.firebasestorage.app",
+      messagingSenderId: "240732235567",
+      appId: "1:240732235567:web:c375962039a9488ad7e3da"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let activeUserId = null;
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        activeUserId = user.uid;
+      } else {
+        activeUserId = null;
+      }
+    });
+
+    window.saveSimulatorTargetsToFirebase = async function(targets) {
+      if (!activeUserId) return;
+      const userRef = doc(db, "users", activeUserId);
+      await setDoc(userRef, {
+        targets: targets,
+        lastUpdated: new Date().toISOString()
+      }, { merge: true });
+    };
   </script>
 </body>
 </html>
