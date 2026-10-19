@@ -1055,6 +1055,7 @@
       isUnlocked: localStorage.getItem('tactical_macro_unlocked') === 'true',
       targets: loadFromStorage('tactical_macro_targets_v2', DEFAULT_TARGETS),
       mealLogs: loadFromStorage('tactical_macro_logs_v2', INITIAL_LOGS),
+      currentObjective: loadFromStorage('tactical_macro_objective_v1', 'lean_bulk'),
       expandedLogIds: ['demo-1'],
       imagePreview: null,
       imageBase64: null,
@@ -1077,6 +1078,7 @@
         localStorage.setItem('tactical_macro_passcode_v2', JSON.stringify(state.passcode));
         localStorage.setItem('tactical_macro_targets_v2', JSON.stringify(state.targets));
         localStorage.setItem('tactical_macro_logs_v2', JSON.stringify(state.mealLogs));
+        localStorage.setItem('tactical_macro_objective_v1', JSON.stringify(state.currentObjective));
       } catch (e) {
         console.error('Storage error:', e);
       }
@@ -1631,19 +1633,24 @@
       }
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
-      const systemInstruction = `You are an elite sports nutritionist and tactical performance dietitian specializing in lean muscle hypertrophy (target profile: 25yo male, 189cm, 80.5kg, strength training 3x/week), body recomposition, and metabolic health.
-Analyze the provided meal image and/or user text context.
+     const goalDesc = state.currentObjective === 'cut' 
+        ? 'fat loss / aggressive shredding (caloric deficit)' 
+        : state.currentObjective === 'maintain' 
+        ? 'body recomposition / weight maintenance' 
+        : 'lean muscle hypertrophy (caloric surplus)';
+
+      const systemInstruction = `You are an elite sports nutritionist and tactical performance dietitian specializing in ${goalDesc} (target profile: 25yo male, 189cm, 80.5kg, strength training 3x/week).
+Analyze the provided meal image and/or user text context specifically tailored to this active protocol.
 Provide an accurate, realistic assessment of the food items, estimated weights in grams, and macronutrients (Calories, Protein, Carbohydrates, Fat).
 Rate the overall meal quality on a 1 to 10 scale ("qualityScore").
 Critically evaluate the meal into:
-- "whatsGood": Specific positive nutritional traits (e.g., high leucine/complete protein, clean glycogen source, fiber, micronutrients).
-- "whatsNot": Honest nutritional drawbacks or issues (e.g., excess saturated fat, hidden seed oils, high sodium, low protein-to-calorie ratio, glycemic spike).
-- "optimizationTip": One concrete, actionable tactical adjustment to upgrade this exact meal for lean muscle growth or health.`;
+- "whatsGood": Specific positive nutritional traits aligned with ${state.currentObjective}.
+- "whatsNot": Honest nutritional drawbacks or issues relative to ${state.currentObjective} (e.g., excess fats during cut, insufficient carbs during bulk).
+- "optimizationTip": One concrete, actionable tactical adjustment to upgrade this exact meal for your ${state.currentObjective} objective.`;
 
       const promptText = userNote
-        ? `Analyze this meal. User context/notes: "${userNote}". Return accurate itemized weights, macros, quality score (1-10), "What's Good", and "What's Not".`
-        : `Analyze this meal picture. Estimate total and itemized weights in grams, calculate macros, rate quality (1-10), and provide a strict nutritional critique ("What's Good" and "What's Not").`;
-
+        ? `Analyze this meal for my current objective (${state.currentObjective}). User context/notes: "${userNote}". Return accurate itemized weights, macros, quality score (1-10), "What's Good", and "What's Not".`
+        : `Analyze this meal picture for a ${state.currentObjective} protocol. Estimate total and itemized weights in grams, calculate macros, rate quality (1-10), and provide a strict nutritional critique aligned with this objective.`;
       const parts = [{ text: promptText }];
       if (state.imageBase64) {
         parts.push({
@@ -2059,11 +2066,17 @@ Critically evaluate the meal into:
 
     document.getElementById('save-targets-btn').addEventListener('click', () => {
       state.targets = {
-        calories: Math.max(500, Number(document.getElementById('target-input-calories').value) || 2650),
+        calories: Math.max(500, Number(document.getElementById('target-input-calories').value) || 2400),
         protein: Math.max(20, Number(document.getElementById('target-input-protein').value) || 165),
-        carbs: Math.max(20, Number(document.getElementById('target-input-carbs').value) || 300),
+        carbs: Math.max(20, Number(document.getElementById('target-input-carbs').value) || 238),
         fat: Math.max(15, Number(document.getElementById('target-input-fat').value) || 85)
       };
+      
+      const goalSelect = document.getElementById('tdee-goal');
+      if (goalSelect) {
+        state.currentObjective = goalSelect.value;
+      }
+
       const newPasscode = document.getElementById('target-input-passcode').value.trim();
       if (newPasscode) {
         state.passcode = newPasscode;
@@ -2073,7 +2086,7 @@ Critically evaluate the meal into:
       renderDashboard();
       modalBackdrop.classList.add('hidden');
       modalBackdrop.classList.remove('flex');
-      showToast('Daily macro targets & security settings updated.');
+      showToast('Daily macro targets & objective protocol updated.');
     });
 
     // --- INITIALIZE ON LOAD ---
