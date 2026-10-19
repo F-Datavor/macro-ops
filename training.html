@@ -906,13 +906,22 @@
           if (snap.exists()) {
             const data = snap.data();
             if (data.geminiApiKey) window.GEMINI_API_KEY = data.geminiApiKey;
+            
             if (data.mealLogs) {
               trainingState.mealLogs = data.mealLogs;
               localStorage.setItem('tactical_macro_logs_v2', JSON.stringify(data.mealLogs));
+            } else {
+              trainingState.mealLogs = [];
+              localStorage.setItem('tactical_macro_logs_v2', JSON.stringify([]));
             }
+
             if (data.workoutHistory) {
               trainingState.workoutHistory = data.workoutHistory;
               localStorage.setItem('tactical_workout_history_v1', JSON.stringify(data.workoutHistory));
+              renderWorkoutHistory();
+            } else {
+              trainingState.workoutHistory = [];
+              localStorage.setItem('tactical_workout_history_v1', JSON.stringify([]));
               renderWorkoutHistory();
             }
           }

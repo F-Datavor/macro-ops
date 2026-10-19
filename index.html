@@ -1952,12 +1952,22 @@ Critically evaluate the meal into:
     document.getElementById('reset-day-yes').addEventListener('click', () => {
       state.mealLogs = [];
       saveToStorage();
+      localStorage.removeItem('tactical_workout_history_v1'); // Clear training history cache
       renderDashboard();
       renderMealLogs();
       resetConfirm.classList.add('hidden');
       resetConfirm.classList.remove('flex');
       resetTrigger.classList.remove('hidden');
-      showToast('Daily log cleared.');
+      if (window.saveLogsToFirebase) {
+        // Force Firebase to clear both arrays
+        const sharedRef = doc(db, "macro_ops", "shared_log");
+        setDoc(sharedRef, {
+          mealLogs: [],
+          workoutHistory: [],
+          lastUpdated: new Date().toISOString()
+        }, { merge: true });
+      }
+      showToast('Daily log and kinetic archive cleared.');
     });
 
     // --- TARGETS & BIOMETRIC TDEE MODAL ---
