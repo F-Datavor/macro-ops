@@ -355,7 +355,16 @@
                 </button>
               </div>
 
-              <!-- Hidden File Input -->
+              <!-- Hidden Camera Input (Direct Rear Camera on Mobile) -->
+              <input
+                id="meal-camera-input"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                class="hidden"
+              />
+
+              <!-- Hidden Gallery/File Input -->
               <input
                 id="meal-file-input"
                 type="file"
@@ -372,11 +381,18 @@
                   <i data-lucide="camera" class="w-6 h-6 text-zinc-400 group-hover:text-amber-400"></i>
                 </div>
                 <p class="font-mono text-xs sm:text-sm text-zinc-200 font-medium">
-                  TAP TO TAKE PHOTO OR DROP MEAL IMAGE
+                  TAP TO LAUNCH CAMERA
                 </p>
                 <p class="font-mono text-[11px] sm:text-xs text-zinc-500 mt-1">
-                  SUPPORTS JPEG, PNG, WEBP • GEMINI VISION ENGINE
+                  OR DRAG & DROP MEAL IMAGE
                 </p>
+                <button
+                  type="button"
+                  id="open-gallery-btn"
+                  class="mt-3 px-3 py-1.5 rounded bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-[10px] font-mono text-amber-400 uppercase tracking-wider transition-colors cursor-pointer"
+                >
+                  [BROWSE PHOTO LIBRARY / FILES]
+                </button>
               </div>
 
               <!-- Preview Container -->
@@ -1536,14 +1552,27 @@
     };
 
     // --- IMAGE UPLOAD & DRAG-AND-DROP HANDLERS ---
+    const cameraInput = document.getElementById('meal-camera-input');
     const fileInput = document.getElementById('meal-file-input');
+    const openGalleryBtn = document.getElementById('open-gallery-btn');
     const dropzone = document.getElementById('upload-dropzone');
     const previewContainer = document.getElementById('image-preview-container');
     const previewImg = document.getElementById('image-preview-el');
     const clearImageBtn = document.getElementById('clear-image-btn');
 
-    dropzone.addEventListener('click', () => fileInput.click());
+    // Tapping the main box launches the rear camera directly on mobile
+    dropzone.addEventListener('click', () => cameraInput.click());
 
+    // Tapping the secondary button opens the photo library / file browser
+    openGalleryBtn.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevents triggering the main dropzone camera click
+      fileInput.click();
+    });
+
+    cameraInput.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (file) await handleSelectedFile(file);
+    });
     dropzone.addEventListener('dragover', (e) => {
       e.preventDefault();
       dropzone.classList.add('border-amber-500', 'bg-zinc-900');
@@ -1589,6 +1618,7 @@
       state.imageBase64 = null;
       state.currentAnalysis = null;
       fileInput.value = '';
+      cameraInput.value = '';
       previewImg.src = '';
       dropzone.classList.remove('hidden');
       previewContainer.classList.add('hidden');
@@ -1632,6 +1662,7 @@
         return;
       }
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
 
      const goalDesc = state.currentObjective === 'cut' 
         ? 'fat loss / aggressive shredding (caloric deficit)' 
