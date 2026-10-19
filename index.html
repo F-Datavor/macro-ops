@@ -160,27 +160,31 @@
       </div>
 
       <!-- Login Form -->
+      <!-- Multi-User Login / Register Form -->
       <form id="auth-form" class="space-y-4">
         <div>
-          <div class="flex flex-wrap items-center justify-between gap-1 mb-1.5">
-            <label for="auth-password-input" class="text-xs font-mono uppercase text-zinc-300 tracking-wider">
-              ENTER ACCESS PASSCODE
-            </label>
-            <button
-              type="button"
-              id="fill-default-passcode-btn"
-              class="min-h-[36px] sm:min-h-0 px-1 flex items-center text-[11px] font-mono text-amber-400/90 hover:text-amber-300 underline decoration-dotted cursor-pointer"
-              title="Click to auto-fill default passcode"
-            >
-              Default Passcode: <span id="auth-hint-code" class="ml-1">OPS2026</span>
-            </button>
-          </div>
+          <label for="auth-email-input" class="block text-xs font-mono uppercase text-zinc-300 tracking-wider mb-1.5">
+            OPERATOR EMAIL
+          </label>
+          <input
+            id="auth-email-input"
+            type="email"
+            autocomplete="email"
+            placeholder="operator@macro-ops.com"
+            required
+            class="w-full min-h-[46px] bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-lg px-3.5 py-2.5 text-base sm:text-sm font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none"
+          />
+        </div>
 
+        <div>
+          <label for="auth-password-input" class="block text-xs font-mono uppercase text-zinc-300 tracking-wider mb-1.5">
+            ACCESS PASSCODE (MIN 6 CHARS)
+          </label>
           <div class="relative">
             <input
               id="auth-password-input"
               type="password"
-              autocomplete="off"
+              autocomplete="current-password"
               placeholder="••••••••••••"
               required
               class="w-full min-h-[46px] bg-zinc-950 border border-zinc-700 focus:border-amber-500 rounded-lg pl-3.5 pr-11 py-2.5 text-base sm:text-sm font-mono text-zinc-100 placeholder-zinc-600 focus:outline-none tracking-widest"
@@ -203,16 +207,26 @@
           class="hidden p-3 rounded-lg bg-rose-950/60 border border-rose-700/80 text-rose-300 text-xs font-mono items-center gap-2"
         >
           <i data-lucide="shield-alert" class="w-4 h-4 text-rose-400 shrink-0"></i>
-          <span>ACCESS DENIED: INVALID TACTICAL PASSCODE.</span>
+          <span id="auth-error-text">ACCESS DENIED: INVALID CREDENTIALS.</span>
         </div>
 
-        <button
-          type="submit"
-          class="w-full min-h-[48px] py-3 px-5 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/10 cursor-pointer"
-        >
-          <i data-lucide="unlock" class="w-4 h-4 stroke-[2.5]"></i>
-          <span>UNLOCK TERMINAL</span>
-        </button>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+          <button
+            type="submit"
+            class="w-full min-h-[48px] py-3 px-4 rounded-lg bg-amber-500 hover:bg-amber-400 text-zinc-950 font-mono font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/10 cursor-pointer"
+          >
+            <i data-lucide="unlock" class="w-4 h-4 stroke-[2.5]"></i>
+            <span>SIGN IN</span>
+          </button>
+          <button
+            type="button"
+            id="auth-register-btn"
+            class="w-full min-h-[48px] py-3 px-4 rounded-lg bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-200 font-mono font-bold text-xs uppercase tracking-widest transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+            <span>CREATE ACCOUNT</span>
+          </button>
+        </div>
       </form>
 
       <div class="mt-5 pt-4 border-t border-zinc-800/80 flex flex-wrap items-center justify-between gap-2 text-[10px] sm:text-[11px] font-mono text-zinc-500">
@@ -1068,11 +1082,18 @@
     // --- APPLICATION STATE ---
     let state = {
       passcode: loadFromStorage('tactical_macro_passcode_v2', DEFAULT_PASSCODE),
-      isUnlocked: localStorage.getItem('tactical_macro_unlocked') === 'true',
+      isUnlocked: false,
       targets: loadFromStorage('tactical_macro_targets_v2', DEFAULT_TARGETS),
-      mealLogs: loadFromStorage('tactical_macro_logs_v2', INITIAL_LOGS),
+      mealLogs: loadFromStorage('tactical_macro_logs_v2', []),
       currentObjective: loadFromStorage('tactical_macro_objective_v1', 'lean_bulk'),
-      expandedLogIds: ['demo-1'],
+      biometrics: loadFromStorage('tactical_macro_biometrics_v1', {
+        gender: 'male',
+        age: 25,
+        weight: 80.5,
+        height: 189,
+        activity: 1.375
+      }),
+      expandedLogIds: [],
       imagePreview: null,
       imageBase64: null,
       imageMimeType: 'image/jpeg',
@@ -1101,50 +1122,17 @@
     }
 
     // --- AUTH GATE / LOCK SCREEN LOGIC ---
+// --- AUTH GATE / LOCK SCREEN LOGIC ---
     const authGate = document.getElementById('auth-gate');
-    const authCard = document.getElementById('auth-card');
-    const authForm = document.getElementById('auth-form');
     const authPasswordInput = document.getElementById('auth-password-input');
-    const authErrorMsg = document.getElementById('auth-error-msg');
-    const authHintCode = document.getElementById('auth-hint-code');
-    const authStatusIndicator = document.getElementById('auth-status-indicator');
 
     function syncAuthGateUI() {
-      authHintCode.textContent = state.passcode || DEFAULT_PASSCODE;
       if (state.isUnlocked) {
         authGate.classList.add('hidden');
       } else {
         authGate.classList.remove('hidden');
-        setTimeout(() => authPasswordInput.focus(), 50);
       }
     }
-
-    authForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      const entered = authPasswordInput.value.trim();
-      const expected = state.passcode || DEFAULT_PASSCODE;
-
-      if (entered === expected) {
-        state.isUnlocked = true;
-        localStorage.setItem('tactical_macro_unlocked', 'true');
-        authErrorMsg.classList.add('hidden');
-        authErrorMsg.classList.remove('flex');
-        authStatusIndicator.textContent = 'ACCESS GRANTED';
-        authStatusIndicator.className = 'text-emerald-400 font-bold text-right';
-        authPasswordInput.value = '';
-        syncAuthGateUI();
-        showToast('Terminal unlocked. Welcome back, Operator.');
-      } else {
-        authErrorMsg.classList.remove('hidden');
-        authErrorMsg.classList.add('flex');
-        authStatusIndicator.textContent = 'UNAUTHORIZED ATTEMPT';
-        authStatusIndicator.className = 'text-rose-400 font-bold text-right';
-        authCard.classList.remove('animate-shake');
-        void authCard.offsetWidth; // trigger reflow
-        authCard.classList.add('animate-shake');
-        authPasswordInput.select();
-      }
-    });
 
     // Show / Hide Password Toggle
     document.getElementById('toggle-password-vis-btn').addEventListener('click', () => {
@@ -1152,24 +1140,6 @@
       authPasswordInput.type = isPwd ? 'text' : 'password';
       document.getElementById('eye-icon-open').classList.toggle('hidden', isPwd);
       document.getElementById('eye-icon-closed').classList.toggle('hidden', !isPwd);
-    });
-
-    // Quick-Fill Default Passcode Hint Button
-    document.getElementById('fill-default-passcode-btn').addEventListener('click', () => {
-      authPasswordInput.value = state.passcode || DEFAULT_PASSCODE;
-      authPasswordInput.focus();
-    });
-
-    // Lock Terminal Button in Header
-    document.getElementById('lock-terminal-btn').addEventListener('click', () => {
-      state.isUnlocked = false;
-      localStorage.removeItem('tactical_macro_unlocked');
-      authStatusIndicator.textContent = 'AWAITING PASSCODE...';
-      authStatusIndicator.className = 'text-amber-400 text-right';
-      authErrorMsg.classList.add('hidden');
-      authErrorMsg.classList.remove('flex');
-      syncAuthGateUI();
-      showToast('Terminal session locked.');
     });
 
     // --- HELPER: Toast Notification ---
@@ -1670,7 +1640,7 @@
         ? 'body recomposition / weight maintenance' 
         : 'lean muscle hypertrophy (caloric surplus)';
 
-      const systemInstruction = `You are an elite sports nutritionist and tactical performance dietitian specializing in ${goalDesc} (target profile: 25yo male, 189cm, 80.5kg, strength training 3x/week).
+      const systemInstruction = `You are an elite sports nutritionist and tactical performance dietitian specializing in ${goalDesc} (target profile: ${state.biometrics.age}yo ${state.biometrics.gender}, ${state.biometrics.height}cm, ${state.biometrics.weight}kg).
 Analyze the provided meal image and/or user text context specifically tailored to this active protocol.
 Provide an accurate, realistic assessment of the food items, estimated weights in grams, and macronutrients (Calories, Protein, Carbohydrates, Fat).
 Rate the overall meal quality on a 1 to 10 scale ("qualityScore").
@@ -1990,21 +1960,22 @@ Critically evaluate the meal into:
     document.getElementById('reset-day-yes').addEventListener('click', () => {
       state.mealLogs = [];
       saveToStorage();
-      localStorage.removeItem('tactical_workout_history_v1'); // Clear training history cache
+      localStorage.removeItem('tactical_workout_history_v1');
       renderDashboard();
       renderMealLogs();
       resetConfirm.classList.add('hidden');
       resetConfirm.classList.remove('flex');
       resetTrigger.classList.remove('hidden');
-      if (window.saveLogsToFirebase) {
-        // Force Firebase to clear both arrays
-        const sharedRef = doc(db, "macro_ops", "shared_log");
-        setDoc(sharedRef, {
-          mealLogs: [],
-          workoutHistory: [],
-          lastUpdated: new Date().toISOString()
-        }, { merge: true });
-      }
+      if (window.resetUserDayInFirebase) window.resetUserDayInFirebase();
+
+      // Force Firebase to clear both arrays
+      const sharedRef = doc(db, 'macro_ops', 'shared_log');
+      setDoc(sharedRef, {
+        mealLogs: [],
+        workoutHistory: [],
+        lastUpdated: new Date().toISOString()
+      }, { merge: true });
+
       showToast('Daily log and kinetic archive cleared.');
     });
 
@@ -2067,6 +2038,10 @@ Critically evaluate the meal into:
       const activity = Number(document.getElementById('tdee-activity').value) || 1.375;
       const goal = document.getElementById('tdee-goal').value;
 
+      state.biometrics = { gender, age, weight, height, activity };
+      state.currentObjective = goal;
+      localStorage.setItem('tactical_macro_biometrics_v1', JSON.stringify(state.biometrics));
+
       // Mifflin-St Jeor Equation
       let bmr = 10 * weight + 6.25 * height - 5 * age;
       bmr += gender === 'male' ? 5 : -161;
@@ -2102,22 +2077,17 @@ Critically evaluate the meal into:
         carbs: Math.max(20, Number(document.getElementById('target-input-carbs').value) || 238),
         fat: Math.max(15, Number(document.getElementById('target-input-fat').value) || 85)
       };
-      
-      const goalSelect = document.getElementById('tdee-goal');
-      if (goalSelect) {
-        state.currentObjective = goalSelect.value;
-      }
-
       const newPasscode = document.getElementById('target-input-passcode').value.trim();
       if (newPasscode) {
         state.passcode = newPasscode;
       }
       saveToStorage();
+      if (window.saveLogsToFirebase) window.saveLogsToFirebase();
       syncAuthGateUI();
       renderDashboard();
       modalBackdrop.classList.add('hidden');
       modalBackdrop.classList.remove('flex');
-      showToast('Daily macro targets & objective protocol updated.');
+      showToast('Daily macro targets & security settings updated.');
     });
 
     // --- INITIALIZE ON LOAD ---
@@ -2130,8 +2100,14 @@ Critically evaluate the meal into:
 </script>
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { 
+      getAuth, 
+      signInWithEmailAndPassword, 
+      createUserWithEmailAndPassword, 
+      signOut, 
+      onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCK2URxdAqHhex5RJLiueRdSIFo5Yze6jM",
@@ -2147,42 +2123,122 @@ Critically evaluate the meal into:
     const db = getFirestore(app);
 
     let currentUserId = null;
+    let unsubscribeUserDoc = null;
 
-    signInAnonymously(auth).catch(console.error);
+    const emailInput = document.getElementById('auth-email-input');
+    const passwordInput = document.getElementById('auth-password-input');
+    const errorBanner = document.getElementById('auth-error-msg');
+    const errorText = document.getElementById('auth-error-text');
+    const statusIndicator = document.getElementById('auth-status-indicator');
 
-    onAuthStateChanged(auth, (user) => {
-      if (user) {
-        currentUserId = user.uid;
-        listenToUserData(user.uid);
+    function showAuthError(msg) {
+      errorText.textContent = msg;
+      errorBanner.classList.remove('hidden');
+      errorBanner.classList.add('flex');
+    }
+
+    // 1. Sign In Existing Operator
+    document.getElementById('auth-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorBanner.classList.add('hidden');
+      try {
+        statusIndicator.textContent = 'AUTHENTICATING...';
+        await signInWithEmailAndPassword(auth, emailInput.value.trim(), passwordInput.value);
+      } catch (err) {
+        statusIndicator.textContent = 'AUTH FAILED';
+        showAuthError('LOGIN FAILED: Check email and password.');
       }
     });
 
-    function listenToUserData(uid) {
-      const userDocRef = doc(db, "macro_ops", "shared_log");
-      onSnapshot(userDocRef, (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data.geminiApiKey) {
-            window.GEMINI_API_KEY = data.geminiApiKey;
+    // 2. Register New Friend / Operator
+    document.getElementById('auth-register-btn').addEventListener('click', async () => {
+      const email = emailInput.value.trim();
+      const pwd = passwordInput.value;
+      if (!email || pwd.length < 6) {
+        showAuthError('Enter a valid email and a passcode of at least 6 characters.');
+        return;
+      }
+      errorBanner.classList.add('hidden');
+      try {
+        statusIndicator.textContent = 'INITIALIZING OPERATOR...';
+        await createUserWithEmailAndPassword(auth, email, pwd);
+        showToast('Operator account created! Configure your TDEE targets.');
+      } catch (err) {
+        statusIndicator.textContent = 'REGISTRATION FAILED';
+        showAuthError(err.message);
+      }
+    });
+
+    // 3. Log Out when clicking Lock Terminal
+    document.getElementById('lock-terminal-btn').addEventListener('click', async () => {
+      localStorage.clear();
+      await signOut(auth);
+      showToast('Logged out of terminal.');
+    });
+
+    // 4. Listen to Auth State & Isolate User Data
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        currentUserId = user.uid;
+        state.isUnlocked = true;
+        syncAuthGateUI();
+
+        // Load shared Gemini API key from macro_ops/shared_log
+        const configRef = doc(db, "macro_ops", "shared_log");
+        getDoc(configRef).then((snap) => {
+          if (snap.exists() && snap.data().geminiApiKey) {
+            window.GEMINI_API_KEY = snap.data().geminiApiKey;
           }
-          if (data.mealLogs) {
-            state.mealLogs = data.mealLogs;
-            localStorage.setItem('tactical_macro_logs_v2', JSON.stringify(state.mealLogs));
+        }).catch(console.error);
+
+        // Subscribe to this user's private document: users/{uid}
+        if (unsubscribeUserDoc) unsubscribeUserDoc();
+        const userDocRef = doc(db, "users", user.uid);
+        unsubscribeUserDoc = onSnapshot(userDocRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            state.mealLogs = data.mealLogs || [];
+            if (data.targets) state.targets = data.targets;
+            if (data.currentObjective) state.currentObjective = data.currentObjective;
+            if (data.biometrics) state.biometrics = data.biometrics;
+            saveToStorage();
             renderDashboard();
             renderMealLogs();
+          } else {
+            // Initialize clean profile for a new friend
+            state.mealLogs = [];
+            saveToStorage();
+            renderDashboard();
+            renderMealLogs();
+            setDoc(userDocRef, {
+              targets: state.targets,
+              biometrics: state.biometrics,
+              currentObjective: state.currentObjective,
+              mealLogs: [],
+              workoutHistory: [],
+              createdAt: new Date().toISOString()
+            });
           }
-        }
-      });
-    }
+        });
+      } else {
+        currentUserId = null;
+        state.isUnlocked = false;
+        if (unsubscribeUserDoc) unsubscribeUserDoc();
+        syncAuthGateUI();
+      }
+    });
 
     window.saveLogsToFirebase = async function() {
       if (!currentUserId) return;
-      const userDocRef = doc(db, "macro_ops", "shared_log");
+      const userDocRef = doc(db, "users", currentUserId);
       await setDoc(userDocRef, {
         mealLogs: state.mealLogs,
+        targets: state.targets,
+        biometrics: state.biometrics,
+        currentObjective: state.currentObjective,
         lastUpdated: new Date().toISOString()
       }, { merge: true });
     };
-  </script>
+</script>
 </body>
 </html>
