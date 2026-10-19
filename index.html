@@ -252,6 +252,14 @@
 
       <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
         <a
+          href="training.html"
+          class="min-h-[44px] px-3 sm:px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/80 text-xs font-mono text-cyan-400 transition-colors cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2"
+          title="Open Kinetic Training Logbook"
+        >
+          <i data-lucide="dumbbell" class="w-4 h-4 text-cyan-400 shrink-0"></i>
+          <span class="text-[11px] sm:text-xs">TRAINING</span>
+        </a>
+        <a
           href="simulator.html"
           class="min-h-[44px] px-3 sm:px-3.5 py-2 rounded-lg bg-zinc-900 hover:bg-zinc-800 border border-zinc-700/80 text-xs font-mono text-amber-400 transition-colors cursor-pointer flex items-center justify-center gap-1.5 sm:gap-2"
           title="Open Biometric Simulator"
@@ -975,9 +983,9 @@
     const DEFAULT_PASSCODE = 'OPS2026';
 
     const DEFAULT_TARGETS = {
-      calories: 2650,
+      calories: 2400,
       protein: 165,
-      carbs: 300,
+      carbs: 238,
       fat: 85
     };
 
@@ -1219,14 +1227,18 @@
     // --- RENDER: MACRO TELEMETRY DASHBOARD ---
     function renderDashboard() {
       const totals = state.mealLogs.reduce(
-        (acc, meal) => ({
-          calories: acc.calories + (Number(meal.calories) || 0),
-          protein: acc.protein + (Number(meal.protein) || 0),
-          carbs: acc.carbs + (Number(meal.carbs) || 0),
-          fat: acc.fat + (Number(meal.fat) || 0)
+        (acc, entry) => ({
+          calories: acc.calories + (Number(entry.calories) || 0),
+          protein: acc.protein + (Number(entry.protein) || 0),
+          carbs: acc.carbs + (Number(entry.carbs) || 0),
+          fat: acc.fat + (Number(entry.fat) || 0),
+          burned: acc.burned + (entry.type === 'workout' ? (Number(entry.caloriesBurned) || 0) : 0)
         }),
-        { calories: 0, protein: 0, carbs: 0, fat: 0 }
+        { calories: 0, protein: 0, carbs: 0, fat: 0, burned: 0 }
       );
+
+      const dynamicCalorieTarget = state.targets.calories + totals.burned;
+      const dynamicCarbTarget = state.targets.carbs + Math.round(totals.burned / 4);
 
       const totalCalsSafe = Math.max(1, totals.calories);
       const cards = [
@@ -1234,10 +1246,10 @@
           label: 'ENERGY BUDGET',
           unit: ' kcal',
           current: Math.round(totals.calories),
-          target: state.targets.calories,
+          target: dynamicCalorieTarget,
           accentColor: 'text-amber-400',
           barColor: 'bg-amber-500',
-          subLabel: 'ANABOLIC SURPLUS'
+          subLabel: totals.burned > 0 ? `BASE ${state.targets.calories} + ${totals.burned} KINETIC` : 'REST DAY BASELINE'
         },
         {
           label: 'PROTEIN SYNTHESIS',
@@ -1252,10 +1264,10 @@
           label: 'GLYCOGEN / CARBS',
           unit: 'g',
           current: Math.round(totals.carbs),
-          target: state.targets.carbs,
+          target: dynamicCarbTarget,
           accentColor: 'text-sky-400',
           barColor: 'bg-sky-500',
-          subLabel: `${Math.round(((totals.carbs * 4) / totalCalsSafe) * 100)}% OF KCAL`
+          subLabel: totals.burned > 0 ? `+${Math.round(totals.burned / 4)}G WORKOUT REFUEL` : `${Math.round(((totals.carbs * 4) / totalCalsSafe) * 100)}% OF KCAL`
         },
         {
           label: 'LIPIDS / FATS',
@@ -1344,6 +1356,26 @@
       }
 
       listEl.innerHTML = state.mealLogs.map(meal => {
+        if (meal.type === 'workout') {
+          return `
+            <div class="bg-cyan-950/15 border border-cyan-500/40 rounded-lg p-3.5 transition-all">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] font-mono px-1.5 py-0.5 bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 rounded">${escapeHtml(meal.time)}</span>
+                    <span class="text-[10px] font-mono px-1.5 py-0.5 bg-amber-500/10 border border-amber-500/30 text-amber-400 rounded">+${meal.caloriesBurned} KCAL UNLOCKED</span>
+                  </div>
+                  <h3 class="text-sm font-mono font-bold text-zinc-100 mt-1">${escapeHtml(meal.mealName)}</h3>
+                  <p class="text-[11px] font-mono text-zinc-400 mt-0.5">${escapeHtml(meal.estimatedWeight || '')}</p>
+                </div>
+                <button onclick="deleteMealLog('${meal.id}')" class="min-w-[38px] min-h-[38px] flex items-center justify-center text-zinc-500 hover:text-rose-400 rounded bg-zinc-900 border border-zinc-800 cursor-pointer">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        }
+
         const isExpanded = state.expandedLogIds.includes(meal.id);
         const hasDetails =
           (meal.whatsGood && meal.whatsGood.length > 0) ||
