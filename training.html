@@ -823,7 +823,21 @@
         return;
       }
 
-      list.innerHTML = trainingState.workoutHistory.map(w => `
+      list.innerHTML = trainingState.workoutHistory.map(w => {
+        let exercisesHtml = '';
+        if (w.exercises && w.exercises.length > 0) {
+          exercisesHtml = '<div class="mt-3 pt-3 border-t border-zinc-800/80 space-y-2">';
+          w.exercises.forEach(ex => {
+            const completedSets = ex.sets ? ex.sets.filter(s => s.completed) : [];
+            if (completedSets.length > 0) {
+              const setsStr = completedSets.map(s => `${s.weight}kg x ${s.reps}`).join(', ');
+              exercisesHtml += `<div class="text-[10px] sm:text-[11px] leading-snug"><span class="text-zinc-300 font-bold">${ex.name}:</span> <span class="text-zinc-400">${setsStr}</span></div>`;
+            }
+          });
+          exercisesHtml += '</div>';
+        }
+
+        return `
         <div class="bg-zinc-950 border border-zinc-800 rounded-lg p-3.5 space-y-2 font-mono">
           <div class="flex items-start justify-between gap-2">
             <div>
@@ -841,15 +855,16 @@
             </div>
             <div class="bg-zinc-900/70 p-1.5 rounded">
               <span class="text-[9px] text-zinc-500 block">TONNAGE</span>
-              <span class="text-xs font-bold text-cyan-400">${w.tonnage ? `${w.tonnage.toLocaleString()}kg` : 'N/A'}</span>
+              <span class="text-xs font-bold text-cyan-400">${w.tonnage ? w.tonnage.toLocaleString() + 'kg' : 'N/A'}</span>
             </div>
             <div class="bg-zinc-900/70 p-1.5 rounded">
               <span class="text-[9px] text-zinc-500 block">EXPENDED</span>
               <span class="text-xs font-bold text-amber-400">+${w.caloriesBurned} kcal</span>
             </div>
           </div>
+          ${exercisesHtml}
         </div>
-      `).join('');
+      `}).join('');
       lucide.createIcons();
     }
 
@@ -932,6 +947,76 @@
     window.syncTrainingToFirebase = async function() {
       const sharedRef = doc(db, "macro_ops", "shared_log");
       await setDoc(sharedRef, {
+        mealLogs: trainingState.mealLogs,
+        workoutHistory: trainingState.workoutHistory,
+        lastUpdated: new Date().toISOString()
+      }, { merge: true });
+    };
+  </script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCK2URxdAqHhex5RJLiueRdSIFo5Yze6jM",
+      authDomain: "macro-ops.firebaseapp.com",
+      projectId: "macro-ops",
+      storageBucket: "macro-ops.firebasestorage.app",
+      messagingSenderId: "240732235567",
+      appId: "1:240732235567:web:c375962039a9488ad7e3da"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUserId = null;
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) {
+        window.location.href = "index.html";
+        return;
+      }
+
+      currentUserId = user.uid;
+
+      getDoc(doc(db, "macro_ops", "shared_log")).then((snap) => {
+        if (snap.exists() && snap.data().geminiApiKey) {
+          window.GEMINI_API_KEY = snap.data().geminiApiKey;
+        }
+      }).catch(console.error);
+
+      const userRef = doc(db, "users", user.uid);
+      onSnapshot(userRef, (snap) => {
+        if (snap.exists()) {
+          const data = snap.data();
+          
+          if (data.mealLogs) {
+            trainingState.mealLogs = data.mealLogs;
+            localStorage.setItem('tactical_macro_logs_v2', JSON.stringify(data.mealLogs));
+          } else {
+            trainingState.mealLogs = [];
+            localStorage.setItem('tactical_macro_logs_v2', JSON.stringify([]));
+          }
+
+          if (data.workoutHistory) {
+            trainingState.workoutHistory = data.workoutHistory;
+            localStorage.setItem('tactical_workout_history_v1', JSON.stringify(data.workoutHistory));
+            renderWorkoutHistory();
+          } else {
+            trainingState.workoutHistory = [];
+            localStorage.setItem('tactical_workout_history_v1', JSON.stringify([]));
+            renderWorkoutHistory();
+          }
+        }
+      });
+    });
+
+    window.syncTrainingToFirebase = async function() {
+      if (!currentUserId) return;
+      const userRef = doc(db, "users", currentUserId);
+      await setDoc(userRef, {
         mealLogs: trainingState.mealLogs,
         workoutHistory: trainingState.workoutHistory,
         lastUpdated: new Date().toISOString()
